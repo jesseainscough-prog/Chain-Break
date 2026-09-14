@@ -422,7 +422,17 @@ function hint(){
 }
 document.getElementById("reset").onclick=reset;document.getElementById("undo").onclick=undo;document.getElementById("hint").onclick=hint;document.getElementById("nextLevel").onclick=()=>loadLevel(currentLevel+1,true);
 loadLevel(0,true);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").then(r=>r.update()).catch(()=>{}))}
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(reg=>reg.unregister());
+  });
+}
+
+if("caches" in window){
+  caches.keys().then(keys=>{
+    keys.forEach(key=>caches.delete(key));
+  });
+}}
 </script>
 </body>
 </html>
