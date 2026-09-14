@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.5</title>
+<title>ChainBreak V2.8.6</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -828,7 +828,7 @@ body{touch-action:manipulation}
 #refillLives{min-height:54px!important;font-size:17px!important;background:linear-gradient(180deg,#ef5350,#d83d3a)!important;color:white!important}
 
 .edgeGate.lockedGate{filter:saturate(.45) brightness(.68);opacity:.88;position:relative}
-.edgeGate.lockedGate::after{content:attr(data-lock);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;line-height:1;background:#07192b;border:1px solid rgba(255,255,255,.75);border-radius:8px;padding:3px 4px;white-space:nowrap;z-index:5}
+.edgeGate.lockedGate::after{content:attr(data-lock);position:absolute;inset:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;line-height:1;background:rgba(7,25,43,.62);border:1px solid rgba(255,255,255,.45);border-radius:inherit;white-space:nowrap;z-index:5}
 .edgeGate.lockedGate{color:rgba(255,255,255,.22)}
 #testLevelModal{position:fixed;inset:0;background:rgba(0,8,18,.82);z-index:12000;display:none;align-items:center;justify-content:center;padding:24px}
 #testLevelModal.show{display:flex}
@@ -844,7 +844,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.5</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.6</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -953,7 +953,7 @@ const LEVELS=[
    tutorial:"",instruction:"The red gate is locked. Clear 2 blue pieces to open it, then clear red.",
    gates:[
      {side:"top",index:2,color:"green"},
-     {side:"right",index:2,color:"red",unlockColor:"blue",unlockCount:2},
+     {side:"right",index:2,color:"red",keyCells:["2,5","3,2"]},
      {side:"bottom",index:2,color:"blue"}
    ],
    board:[
@@ -1233,7 +1233,7 @@ function render(){
       const gate=gates.find(g=>g.side===side&&g.index===i);
       if(!gate){const blank=document.createElement("div");blank.className="gateBlank";host.appendChild(blank);continue}
       const d=document.createElement("button");d.className=`exit edgeGate ${gate.color}`;d.dataset.side=side;d.dataset.index=i;d.textContent=arrows[side];
-      if(gateIsLocked(gate)){d.classList.add("lockedGate");d.dataset.lock=`🔒 ${gate.unlockColor==="blue"?"🔵":gate.unlockColor==="red"?"🔴":gate.unlockColor==="green"?"🟢":gate.unlockColor==="yellow"?"🟡":"🟣"} ×${gateLockRemaining(gate)}`}
+      if(gateIsLocked(gate)){d.classList.add("lockedGate");d.dataset.lock=`🔒 ×${gateLockRemaining(gate)}`}
       d.setAttribute("aria-label",`${cap(gate.color)} ${side} gate`);d.addEventListener("click",()=>gateTap(side,i));host.appendChild(d);
     }
   });
@@ -1252,7 +1252,7 @@ function render(){
       if(o?.type==="chain"&&o.cells.some(p=>p.r===r&&p.c===c))el.classList.add("reachable");
     }
     if(v){
-      el.classList.add("piece");const color=baseColor(v);if(color)el.classList.add(color);if(color&&colorNeededForLockedGate(color))el.classList.add("unlockTarget");if(isChain(v))el.classList.add("chain");if(v==="crate"||v==="crate1"){el.classList.add("crate");if(v==="crate1")el.classList.add("damaged");}if(isLocked(v)){el.classList.add("lockedPiece");const sp=document.createElement("span");sp.className="lockCount";sp.textContent=lockRemaining();el.appendChild(sp)}
+      el.classList.add("piece");const color=baseColor(v);if(color)el.classList.add(color);if(color&&cellIsKey(r,c))el.classList.add("unlockTarget");if(isChain(v))el.classList.add("chain");if(v==="crate"||v==="crate1"){el.classList.add("crate");if(v==="crate1")el.classList.add("damaged");}if(isLocked(v)){el.classList.add("lockedPiece");const sp=document.createElement("span");sp.className="lockCount";sp.textContent=lockRemaining();el.appendChild(sp)}
       if(isChain(v)){
         el.classList.add("chainPiece");
         const cells=chainCells(); const other=cells.find(([rr,cc])=>rr!==r||cc!==c);
@@ -1288,12 +1288,23 @@ function render(){
     s.addEventListener("click",()=>slotTap(i));t.appendChild(s)
   }
 }
-function colorNeededForLockedGate(color){
-  return (LEVELS[currentLevel].gates||[]).some(g=>g.unlockColor===color&&gateIsLocked(g));
+function keyCellStillPresent(key){
+  const [r,c]=key.split(",").map(Number);
+  return !!baseColor(board[r]?.[c]);
 }
-function gateLockRemaining(g){return (!g||!g.unlockColor||!g.unlockCount)?0:Math.max(0,g.unlockCount-(cleared[g.unlockColor]||0))}
+function gateLockRemaining(g){
+  if(!g||!g.keyCells)return 0;
+  return g.keyCells.reduce((n,k)=>n+(keyCellStillPresent(k)?1:0),0);
+}
 function gateIsLocked(g){return gateLockRemaining(g)>0}
-function lockedGateMessage(g){const n=gateLockRemaining(g);setStatus(`Clear ${n} more ${g.unlockColor} piece${n===1?"":"s"} to unlock the ${g.color} gate.`);blockedFeedback()}
+function cellIsKey(r,c){
+  return (LEVELS[currentLevel].gates||[]).some(g=>gateIsLocked(g)&&(g.keyCells||[]).includes(`${r},${c}`));
+}
+function lockedGateMessage(g){
+  const n=gateLockRemaining(g);
+  setStatus(`Clear ${n} more keyed piece${n===1?"":"s"} to unlock this gate.`);
+  blockedFeedback()
+}
 function gateTarget(side,index){return side==="top"?[0,index]:side==="bottom"?[5,index]:side==="left"?[index,0]:[index,5]}
 function gateAt(side,index){return gates.find(g=>g.side===side&&g.index===index)}
 function canChainReachGate(originR,originC,side,index){
