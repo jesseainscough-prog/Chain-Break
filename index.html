@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.7.0</title>
+<title>ChainBreak V2.7.2</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -789,12 +789,50 @@ body{touch-action:manipulation}
   box-shadow:0 2px 8px #000b!important;
 }
 
+
+/* V2.7.1 rewarded-ad priority + modal layering fix */
+#failOverlay #watchAdMoves{
+  min-height:88px!important;
+  font-size:24px!important;
+  font-weight:900!important;
+  background:linear-gradient(180deg,#2f89ff,#1768d8)!important;
+  color:#fff!important;
+  border:2px solid rgba(255,255,255,.28)!important;
+  box-shadow:0 10px 26px rgba(23,104,216,.32)!important;
+  order:1;
+}
+#failOverlay #buyMoves,
+#failOverlay #retryLevel{
+  min-height:58px!important;
+  font-size:18px!important;
+  padding:12px 16px!important;
+}
+#failOverlay #buyMoves{order:2}
+#failOverlay #retryLevel{order:3}
+#failOverlay #failSub{order:4}
+#failOverlay .failCard{display:flex!important;flex-direction:column!important}
+#adSimOverlay{
+  z-index:9999!important;
+  background:rgba(2,10,18,.97)!important;
+}
+#adSimOverlay .failCard{
+  border-color:#3b82f6!important;
+  box-shadow:0 20px 70px rgba(0,0,0,.65)!important;
+}
+
+
+/* V2.7.2 life refill prototype */
+#noLivesPanel{order:3;margin-top:6px;padding:12px;border:1px solid #35546f;border-radius:16px;background:#0b2238}
+.lifeTimerTitle{font-size:13px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px}
+.lifeTimer{font-size:30px;font-weight:900;margin:3px 0 10px}
+#refillLives{min-height:54px!important;font-size:17px!important;background:linear-gradient(180deg,#ef5350,#d83d3a)!important;color:white!important}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.7.0</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.7.2</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -855,9 +893,14 @@ body{touch-action:manipulation}
   <div class="failCard">
     <div class="failTitle">Out of Moves</div>
     <div class="failText">Keep this run going or start the level over.</div>
-    <button class="continueBig" id="buyMoves">🪙 +5 Moves (50 Coins)</button>
     <button class="continueBig" id="watchAdMoves">▶ Watch Ad (+5 Moves)</button>
+    <button class="continueBig" id="buyMoves">🪙 +5 Moves (50 Coins)</button>
     <button class="retryBig" id="retryLevel">❤️ Retry (-1 Life)</button>
+    <div id="noLivesPanel" style="display:none">
+      <div class="lifeTimerTitle">Next Life In</div>
+      <div class="lifeTimer" id="lifeTimer">01:00</div>
+      <button class="continueBig" id="refillLives">❤️ Refill All 5 Lives (200 Coins)</button>
+    </div>
     <div class="failSub" id="failSub"></div>
   </div>
 </div>
@@ -924,26 +967,34 @@ function reachableFrom(sr,sc,ignoreCells=[]){
 }
 function canChainMoveTo(targetR,targetC,originR,originC){
   const cells=chainCells(); if(cells.length!==2)return false;
-  const [a,b]=cells;
-  const clicked=(a[0]===originR&&a[1]===originC)?a:b;
-  const other=clicked===a?b:a;
-  const dr=targetR-clicked[0], dc=targetC-clicked[1];
-  const destOther=[other[0]+dr,other[1]+dc];
-  if(destOther[0]<0||destOther[0]>=6||destOther[1]<0||destOther[1]>=6)return false;
+  const clicked=cells.find(([r,c])=>r===originR&&c===originC);
+  if(!clicked)return false;
+  const other=cells.find(x=>x!==clicked);
+  const rel=[other[0]-clicked[0],other[1]-clicked[1]];
   const own=new Set(cells.map(([r,c])=>r+","+c));
-  const dests=[[targetR,targetC],destOther];
-  if(dests.some(([r,c])=>board[r][c]&&!own.has(r+","+c)))return false;
-  // For V2 prototype, chained pair slides in a straight line only.
-  if(dr!==0&&dc!==0)return false;
-  const steps=Math.abs(dr||dc), sr=Math.sign(dr), sc=Math.sign(dc);
-  for(const [r,c] of cells){
-    for(let i=1;i<=steps;i++){
-      const rr=r+sr*i,cc=c+sc*i,k=rr+","+cc;
-      if(rr<0||rr>=6||cc<0||cc>=6)return false;
-      if(board[rr][cc]&&!own.has(k))return false;
+
+  // Route the linked pair through the board one orthogonal step at a time.
+  // The pair keeps its orientation, but the overall route may turn corners.
+  const fits=(r,c)=>{
+    const r2=r+rel[0],c2=c+rel[1];
+    if(r<0||r>=6||c<0||c>=6||r2<0||r2>=6||c2<0||c2>=6)return false;
+    for(const [rr,cc] of [[r,c],[r2,c2]]){
+      if(board[rr][cc]&&!own.has(rr+","+cc))return false;
+    }
+    return true;
+  };
+  if(!fits(targetR,targetC))return false;
+
+  const q=[[originR,originC]],seen=new Set([originR+","+originC]);
+  while(q.length){
+    const [r,c]=q.shift();
+    if(r===targetR&&c===targetC)return true;
+    for(const [rr,cc] of [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]){
+      const k=rr+","+cc;
+      if(!seen.has(k)&&fits(rr,cc)){seen.add(k);q.push([rr,cc]);}
     }
   }
-  return true;
+  return false;
 }
 function clearIfAtGate(r,c){return false}
 function maybeOpenLock(){
@@ -977,6 +1028,11 @@ function updateFailChoices(){
   const retry=document.getElementById("retryLevel");
   if(buy)buy.disabled=coins<50;
   if(retry)retry.disabled=lives<=0;
+  const panel=document.getElementById("noLivesPanel");
+  if(panel)panel.style.display=lives<=0?"block":"none";
+  const refill=document.getElementById("refillLives");
+  if(refill)refill.disabled=coins<200;
+  if(lives<=0) ensureLifeTimer();
   const sub=document.getElementById("failSub");
   if(sub)sub.textContent=`${lives} ${lives===1?"life":"lives"} remaining · ${coins} coins`;
 }
@@ -1007,7 +1063,7 @@ function moveBoardToBoard(sr,sc,tr,tc){
   if(v==="crate"||v==="crate1"||isLocked(v))return false;
   pushHistory();
   if(isChain(v)){
-    if(!canChainMoveTo(tr,tc,sr,sc)){history.pop();setStatus("The chained pair has to slide together in a clear straight path.");return false}
+    if(!canChainMoveTo(tr,tc,sr,sc)){history.pop();setStatus("There isn’t a clear route for both linked blocks.");return false}
     const cells=chainCells(), clicked=cells.find(([r,c])=>r===sr&&c===sc), other=cells.find(x=>x!==clicked);
     const dr=tr-sr,dc=tc-sc, od=[other[0]+dr,other[1]+dc];
     const oldVals=cells.map(([r,c])=>board[r][c]);cells.forEach(([r,c])=>board[r][c]=null);
@@ -1570,6 +1626,7 @@ document.getElementById("watchAdMoves").onclick=()=>{
   claim.style.display="none";
   text.textContent="Ad playing…";
   let n=3; count.textContent=n;
+  document.getElementById("failOverlay").classList.remove("show");
   ov.classList.add("show");
   clearInterval(rewardedAdTimer);
   rewardedAdTimer=setInterval(()=>{
@@ -1587,6 +1644,47 @@ document.getElementById("claimAdMoves").onclick=()=>{
   moveLimit+=5;
   ended=false;
   render();
+};
+
+
+// V2.7.2 life recovery. Prototype timer is 60 seconds so it can be tested quickly.
+// We can lengthen this for release balancing.
+const LIFE_WAIT_MS=60*1000;
+let lifeClock=null;
+function ensureLifeTimer(){
+  if(lives>0)return;
+  let end=+localStorage.getItem("chainbreakNextLifeAt");
+  if(!end||end<=Date.now()){
+    end=Date.now()+LIFE_WAIT_MS;
+    localStorage.setItem("chainbreakNextLifeAt",end);
+  }
+  clearInterval(lifeClock);
+  const tick=()=>{
+    const left=Math.max(0,end-Date.now());
+    const el=document.getElementById("lifeTimer");
+    const secs=Math.ceil(left/1000);
+    if(el)el.textContent=`${String(Math.floor(secs/60)).padStart(2,"0")}:${String(secs%60).padStart(2,"0")}`;
+    if(left<=0){
+      clearInterval(lifeClock);
+      lives=1;
+      localStorage.setItem("chainbreakLives",lives);
+      localStorage.removeItem("chainbreakNextLifeAt");
+      document.getElementById("lifeCount").textContent=lives;
+      updateFailChoices();
+    }
+  };
+  tick(); lifeClock=setInterval(tick,250);
+}
+document.getElementById("refillLives").onclick=()=>{
+  if(coins<200)return;
+  coins-=200;lives=5;
+  localStorage.setItem("chainbreakCoins",coins);
+  localStorage.setItem("chainbreakLives",lives);
+  localStorage.removeItem("chainbreakNextLifeAt");
+  clearInterval(lifeClock);
+  document.getElementById("coinCount").textContent=coins;
+  document.getElementById("lifeCount").textContent=lives;
+  updateFailChoices();
 };
 
 </script>
