@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.6.0</title>
+<title>ChainBreak V2.6.2</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -333,16 +333,147 @@ body{touch-action:manipulation}
 /* Three bottom controls again: Undo, Reset, Hint */
 .controls .btn{flex:1}
 
+
+/* 2.6.1 exact square gates + fused linked pieces */
+.gameCard .arena{
+  --board-gap:1px;
+  --edge-gap:1px;
+  width:min(100%,430px);
+  aspect-ratio:1/1;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr 6fr 1fr;
+  grid-template-rows:1fr 6fr 1fr;
+  gap:var(--edge-gap);
+  overflow:visible;
+}
+.gameCard .board{
+  grid-column:2;
+  grid-row:2;
+  width:100%;
+  height:100%;
+  aspect-ratio:auto;
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  grid-template-rows:repeat(6,1fr);
+  gap:var(--board-gap);
+}
+.gatesTop,.gatesBottom{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:var(--board-gap);
+}
+.gatesLeft,.gatesRight{
+  display:grid;
+  grid-template-rows:repeat(6,1fr);
+  gap:var(--board-gap);
+}
+.gatesTop{grid-column:2;grid-row:1}
+.gatesBottom{grid-column:2;grid-row:3}
+.gatesLeft{grid-column:1;grid-row:2}
+.gatesRight{grid-column:3;grid-row:2}
+
+.gateBlank,
+.gatesTop .exit,.gatesBottom .exit,
+.gatesLeft .exit,.gatesRight .exit{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  aspect-ratio:auto;
+}
+.gatesTop .exit,.gatesBottom .exit,
+.gatesLeft .exit,.gatesRight .exit{
+  border-radius:9px;
+  font-size:18px;
+}
+
+/* Linked pieces read as one object rather than two neighboring cubes. */
+.cell.chainPiece{position:relative;z-index:2}
+.cell.chainJoinDown{border-radius:9px 9px 3px 3px}
+.cell.chainJoinUp{border-radius:3px 3px 9px 9px}
+.cell.chainJoinRight{border-radius:9px 3px 3px 9px}
+.cell.chainJoinLeft{border-radius:3px 9px 9px 3px}
+.cell.chainJoinDown::before,
+.cell.chainJoinRight::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  background:inherit;
+  pointer-events:none;
+}
+.cell.chainJoinDown::before{
+  left:0;
+  right:0;
+  bottom:-2px;
+  height:4px;
+}
+.cell.chainJoinRight::before{
+  top:0;
+  bottom:0;
+  right:-2px;
+  width:4px;
+}
+.chainLink{
+  width:25px;
+  height:25px;
+  font-size:13px;
+  z-index:6;
+}
+
+
+/* 2.6.2: only Level 1 uses the blocking tutorial.
+   Later levels teach on the real board with brief, non-blocking highlights. */
+.gameCard{position:relative}
+.coachBanner{
+  position:absolute;
+  left:50%;
+  top:10px;
+  transform:translate(-50%,-8px);
+  z-index:40;
+  width:min(86%,360px);
+  padding:9px 12px;
+  border-radius:14px;
+  background:rgba(8,31,52,.94);
+  border:1px solid #4b769a;
+  box-shadow:0 8px 24px #0007;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .22s ease,transform .22s ease;
+}
+.coachBanner.show{opacity:1;transform:translate(-50%,0)}
+.coachTitle{font-size:14px;font-weight:1000}
+.coachText{font-size:11px;line-height:1.25;color:#d7e8f6;margin-top:2px}
+.coachPulse{
+  position:relative;
+  z-index:20!important;
+  animation:coachPulse 1s ease-in-out infinite;
+}
+@keyframes coachPulse{
+  0%,100%{filter:brightness(1);box-shadow:0 0 0 0 rgba(125,211,252,0)}
+  50%{filter:brightness(1.28);box-shadow:0 0 0 5px rgba(125,211,252,.5),0 0 24px rgba(125,211,252,.5)}
+}
+.trayCard.coachPulse{animation:coachTrayPulse 1s ease-in-out infinite}
+@keyframes coachTrayPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(125,211,252,0)}
+  50%{box-shadow:0 0 0 4px rgba(125,211,252,.45),0 0 24px rgba(125,211,252,.35)}
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.0</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.2</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
   <div class="card gameCard">
+    <div class="coachBanner" id="coachBanner">
+      <div class="coachTitle" id="coachTitle"></div>
+      <div class="coachText" id="coachText"></div>
+    </div>
     <div class="arena">
       <div class="gatesTop" id="gatesTop"></div>
       <div class="gatesLeft" id="gatesLeft"></div>
@@ -480,6 +611,7 @@ function completionRating(){
   return {stars:1,coins:10,label:"Cleared"};
 }
 function showCompleteOverlay(){
+  clearCoach();
   const r=completionRating(),left=Math.max(0,moveLimit-moves);
   coins+=r.coins;localStorage.setItem("chainbreakCoins",coins);
   document.getElementById("coinCount").textContent=coins;
@@ -577,7 +709,7 @@ function render(){
   }
   const b=document.getElementById("board");b.innerHTML="";
   for(let r=0;r<6;r++)for(let c=0;c<6;c++){
-    const v=board[r][c], el=document.createElement(v?"button":"div");el.className="cell";el.dataset.r=r;el.dataset.c=c;
+    const v=board[r][c], el=document.createElement(v?"button":"div");el.className="cell";el.dataset.r=r;el.dataset.c=c;if(v)el.dataset.v=v;
     if(!v&&reachable.has(r+","+c))el.classList.add("reachable");
     if(!v&&selected&&selected.type==="tray"){
       const o=trayOrigins[selected.i];
@@ -587,8 +719,21 @@ function render(){
     if(v){
       el.classList.add("piece");const color=baseColor(v);if(color)el.classList.add(color);if(isChain(v))el.classList.add("chain");if(v==="crate"||v==="crate1"){el.classList.add("crate");if(v==="crate1")el.classList.add("damaged");}if(isLocked(v)){el.classList.add("lockedPiece");const sp=document.createElement("span");sp.className="lockCount";sp.textContent=lockRemaining();el.appendChild(sp)}
       if(isChain(v)){
+        el.classList.add("chainPiece");
         const cells=chainCells(); const other=cells.find(([rr,cc])=>rr!==r||cc!==c);
-        if(other && ((other[0]===r+1&&other[1]===c)||(other[0]===r&&other[1]===c+1))){const lk=document.createElement("span");lk.className="chainLink "+(other[0]===r+1?"vertical":"horizontal");lk.textContent="🔗";el.appendChild(lk)}
+        if(other){
+          if(other[0]===r+1&&other[1]===c){
+            el.classList.add("chainJoinDown");
+            const lk=document.createElement("span");lk.className="chainLink vertical";lk.textContent="🔗";el.appendChild(lk);
+          }else if(other[0]===r-1&&other[1]===c){
+            el.classList.add("chainJoinUp");
+          }else if(other[0]===r&&other[1]===c+1){
+            el.classList.add("chainJoinRight");
+            const lk=document.createElement("span");lk.className="chainLink horizontal";lk.textContent="🔗";el.appendChild(lk);
+          }else if(other[0]===r&&other[1]===c-1){
+            el.classList.add("chainJoinLeft");
+          }
+        }
       }
       if(selected&&selected.type==="board"&&selected.r===r&&selected.c===c)el.classList.add("selected");
       el.addEventListener("click",()=>selectBoard(r,c));
@@ -808,13 +953,82 @@ function bindDrag(el,src){
   el.addEventListener("pointerdown",e=>startDrag(e,src));
   el.addEventListener("touchstart",e=>startTouchDrag(e,src),{passive:true});
 }
+let coachTimers=[];
+function clearCoach(){
+  coachTimers.forEach(clearTimeout);coachTimers=[];
+  document.getElementById("coachBanner")?.classList.remove("show");
+  document.querySelectorAll(".coachPulse").forEach(x=>x.classList.remove("coachPulse"));
+}
+function coachMessage(title,text,duration=1800){
+  const box=document.getElementById("coachBanner");
+  if(!box)return;
+  document.getElementById("coachTitle").textContent=title;
+  document.getElementById("coachText").textContent=text;
+  box.classList.add("show");
+  coachTimers.push(setTimeout(()=>box.classList.remove("show"),duration));
+}
+function pulseCoachElements(els,duration=1700){
+  els.filter(Boolean).forEach(el=>el.classList.add("coachPulse"));
+  coachTimers.push(setTimeout(()=>els.filter(Boolean).forEach(el=>el.classList.remove("coachPulse")),duration));
+}
 function tutorialColorForLevel(){
   const d=LEVELS[currentLevel]?.demo;
   return d?.color||"red";
 }
+function showBoardCoach(){
+  clearCoach();
+
+  if(currentLevel===1){
+    coachMessage("Gates can be anywhere","Watch the arrows: matching exits can be on the left, right, or bottom.",2200);
+    const sideGates=[...document.querySelectorAll('.gatesLeft .exit,.gatesRight .exit,.gatesBottom .exit')];
+    pulseCoachElements(sideGates,2200);
+    return;
+  }
+
+  if(currentLevel===2){
+    coachMessage("Plan your route","Only certain rows and columns have exits. Keep paths open as you clear pieces.",2300);
+    const gates=[...document.querySelectorAll(".exit")];
+    pulseCoachElements(gates,1800);
+    return;
+  }
+
+  if(currentLevel===3){
+    // A quick sequence introduces the special mechanics directly on the real board.
+    coachMessage("Holding","Park a blocker temporarily. Tap it in Holding to send it back to its original space.",1900);
+    pulseCoachElements([document.querySelector(".trayCard")],1900);
+
+    coachTimers.push(setTimeout(()=>{
+      coachMessage("Crates take 2 hits","Break crates to open routes.",1550);
+      const crate=document.querySelector('.cell[data-v="crate"],.cell[data-v="crate1"]');
+      pulseCoachElements([crate],1550);
+    },1950));
+
+    coachTimers.push(setTimeout(()=>{
+      coachMessage("Linked pieces move together","Drag either blue linked block and the pair moves as one.",1650);
+      const linked=[...document.querySelectorAll(".cell.chainPiece")];
+      pulseCoachElements(linked,1650);
+    },3550));
+
+    coachTimers.push(setTimeout(()=>{
+      coachMessage("Locks open by color","Clear the required blue pieces to unlock this block.",1850);
+      const locked=[...document.querySelectorAll(".cell")].find(el=>board[+el.dataset.r]?.[+el.dataset.c]==="blue_locked2");
+      pulseCoachElements([locked],1850);
+    },5250));
+  }
+}
 function showTutorial(){
   const level=LEVELS[currentLevel];
   if(!level?.tutorial)return;
+
+  // Full hands-on practice only on Level 1.
+  if(currentLevel!==0){
+    tutorialActive=false;
+    document.getElementById("tutorialOverlay")?.classList.remove("show");
+    showBoardCoach();
+    return;
+  }
+
+  clearCoach();
   tutorialActive=true;
   const overlay=document.getElementById("tutorialOverlay");
   const title=document.getElementById("tutorialPopTitle");
@@ -836,12 +1050,13 @@ function completeTutorial(){
   document.getElementById("tutorialOverlay")?.classList.remove("show");
 }
 function loadLevel(index,show=true){
+  clearCoach();
   currentLevel=Math.max(0,Math.min(index,LEVELS.length-1));gates=LEVELS[currentLevel].gates.map(g=>({...g}));board=copyBoard(LEVELS[currentLevel].board);tray=[];trayOrigins=[];moves=0;moveLimit=LEVELS[currentLevel].moveLimit;history=[];selected=null;cleared={};ended=false;dragState=null;tutorialActive=false;clearGhost();document.getElementById("nextLevel").classList.remove("show");setStatus(`Level ${currentLevel+1}: ${LEVELS[currentLevel].name}`);render();if(show)showTutorial();
 }
 function reset(){
-  // Reset should always rebuild the board and restart the lesson for this level.
   document.getElementById("tutorialOverlay")?.classList.remove("show");
-  loadLevel(currentLevel,true);
+  clearCoach();
+  loadLevel(currentLevel,false);
 }
 function undo(){if(!history.length)return;const s=history.pop();restore(s);setStatus("Last move undone.")}
 function pulseHint(pieceEl,gateEl,msg){
