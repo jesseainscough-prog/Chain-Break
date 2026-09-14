@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.0</title>
+<title>ChainBreak V2.8.1</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -832,7 +832,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.0</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.1</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -932,104 +932,99 @@ const LEVELS=[
   {name:"Holding & Obstacles",moveLimit:28,title:"Use every tool",tutorial:"Holding is temporary parking. Tap a held piece and it automatically returns to its original space when that space is open.",instruction:"Now combine the mechanics with gates on different edges.",demo:{color:"blue",side:"bottom"},gates:[{side:"top",index:4,color:"red"},{side:"left",index:4,color:"purple"},{side:"right",index:1,color:"yellow"},{side:"bottom",index:2,color:"green"},{side:"bottom",index:5,color:"blue"}],board:[
     ["green",null,"purple",null,"red",null],[null,"red",null,"yellow",null,"blue"],["crate",null,"blue_chainA",null,"green",null],[null,"yellow","blue_chainB",null,"blue_locked2","purple"],["purple",null,null,"green",null,"red"],[null,"blue","yellow",null,"green",null]
   ]},
-  {name:"Tight Corridors",moveLimit:18,title:"Tight corridors",
-   tutorial:"",instruction:"Crates divide the board into lanes. Open only the routes you actually need.",
+  {name:"Breakthrough",moveLimit:12,title:"Break through",
+   tutorial:"",instruction:"The crate is sitting in the route you need. Break it twice, then use the opening.",
    gates:[
-     {side:"left",index:1,color:"red"},
-     {side:"right",index:4,color:"blue"},
-     {side:"bottom",index:2,color:"green"},
-     {side:"top",index:4,color:"yellow"}
+     {side:"top",index:2,color:"green"},
+     {side:"right",index:2,color:"red"},
+     {side:"bottom",index:2,color:"blue"}
    ],
    board:[
-    [null,null,"crate",null,"yellow",null],
-    ["red",null,"crate",null,null,"blue"],
-    [null,null,"crate",null,"green",null],
     [null,null,null,null,null,null],
-    ["blue",null,"crate",null,"red",null],
-    [null,"green","crate",null,"yellow",null]
+    [null,null,"green",null,null,null],
+    [null,"red","crate",null,null,null],
+    [null,null,"blue",null,null,null],
+    [null,null,null,null,null,null],
+    [null,null,null,null,null,null]
    ]},
-  {name:"Unlock the Route",moveLimit:20,title:"Unlock the route",
-   tutorial:"",instruction:"The locked blue piece needs two blue clears first. Plan where those blues leave the board.",
+  {name:"Two Doors",moveLimit:16,title:"Two doors",
+   tutorial:"",instruction:"Two crates control two important routes. Decide which door to open first.",
    gates:[
-     {side:"top",index:1,color:"blue"},
-     {side:"right",index:1,color:"red"},
-     {side:"bottom",index:4,color:"green"},
+     {side:"left",index:2,color:"red"},
+     {side:"right",index:3,color:"yellow"},
+     {side:"top",index:2,color:"blue"},
+     {side:"bottom",index:3,color:"green"}
+   ],
+   board:[
+    [null,null,null,null,null,null],
+    [null,null,"blue",null,null,null],
+    [null,"crate","red",null,null,null],
+    [null,null,null,"green","crate",null],
+    [null,null,null,"yellow",null,null],
+    [null,null,null,null,null,null]
+   ]},
+  {name:"Make Room",moveLimit:18,title:"Make room for the chain",
+   tutorial:"",instruction:"The linked pair cannot squeeze past the crate. Clear space before routing both blocks out.",
+   gates:[
+     {side:"right",index:2,color:"blue"},
+     {side:"left",index:4,color:"red"},
+     {side:"bottom",index:4,color:"green"}
+   ],
+   board:[
+    [null,null,null,null,null,null],
+    [null,null,"blue_chainA",null,null,null],
+    [null,null,"blue_chainB","crate",null,null],
+    [null,null,null,null,null,null],
+    [null,"red",null,"green",null,null],
+    [null,null,null,null,null,null]
+   ]},
+  {name:"Blue Before Locked",moveLimit:20,title:"Open the lock",
+   tutorial:"",instruction:"The locked blue cannot move yet. Break the crate to reach the blues that unlock it.",
+   gates:[
+     {side:"top",index:2,color:"blue"},
+     {side:"right",index:3,color:"red"},
+     {side:"bottom",index:4,color:"green"}
+   ],
+   board:[
+    [null,null,null,null,null,null],
+    [null,null,"blue","crate","blue",null],
+    [null,null,null,null,null,null],
+    [null,"red",null,"blue_locked2",null,null],
+    [null,null,null,null,"green",null],
+    [null,null,null,null,null,null]
+   ]},
+  {name:"Park Then Break",moveLimit:22,title:"Park, break, return",
+   tutorial:"",instruction:"A piece is occupying the space you need while a crate blocks the route. Holding creates the room to solve it.",
+   gates:[
+     {side:"left",index:2,color:"yellow"},
+     {side:"right",index:2,color:"red"},
+     {side:"top",index:3,color:"blue"},
+     {side:"bottom",index:3,color:"green"}
+   ],
+   board:[
+    [null,null,null,null,null,null],
+    [null,null,null,"blue",null,null],
+    [null,"yellow","red","crate",null,null],
+    [null,null,null,"green",null,null],
+    [null,null,null,null,null,null],
+    [null,null,null,null,null,null]
+   ]},
+  {name:"The Break Room",moveLimit:28,title:"The break room",
+   tutorial:"",instruction:"Every obstacle has a purpose. Open the right routes, unlock blue, and maneuver the linked pair.",
+   gates:[
+     {side:"top",index:2,color:"blue"},
+     {side:"right",index:1,color:"yellow"},
+     {side:"right",index:4,color:"red"},
+     {side:"bottom",index:3,color:"green"},
      {side:"left",index:4,color:"purple"}
    ],
    board:[
-    [null,null,null,"blue",null,null],
-    [null,"red",null,null,"blue",null],
-    ["crate",null,"blue_locked2",null,"green",null],
-    [null,null,null,null,null,null],
-    [null,"purple",null,"red",null,null],
-    [null,null,"green",null,"purple",null]
-   ]},
-  {name:"Linked Escape",moveLimit:22,title:"Linked escape",
-   tutorial:"",instruction:"The linked pair can turn corners, but both blocks must fit along the entire route.",
-   gates:[
-     {side:"right",index:1,color:"blue"},
-     {side:"left",index:4,color:"red"},
-     {side:"bottom",index:4,color:"green"},
-     {side:"top",index:1,color:"yellow"}
-   ],
-   board:[
-    [null,"yellow",null,"crate",null,null],
-    [null,null,"blue_chainA","crate",null,null],
-    ["red",null,"blue_chainB",null,"green",null],
-    [null,null,null,null,null,null],
-    [null,"green",null,"crate","red",null],
-    [null,null,"yellow",null,null,null]
-   ]},
-  {name:"Parking Problem",moveLimit:24,title:"Parking problem",
-   tutorial:"",instruction:"Holding can save a route—but every held piece must eventually return to its original space.",
-   gates:[
-     {side:"top",index:4,color:"red"},
-     {side:"right",index:2,color:"blue"},
-     {side:"bottom",index:1,color:"green"},
-     {side:"left",index:3,color:"yellow"},
-     {side:"bottom",index:5,color:"purple"}
-   ],
-   board:[
-    ["red",null,"crate",null,"blue",null],
-    [null,"green",null,"purple",null,null],
-    ["yellow",null,"crate",null,"red",null],
-    [null,null,"blue",null,null,"yellow"],
-    ["purple",null,"crate","green",null,null],
-    [null,null,null,null,null,null]
-   ]},
-  {name:"Chain Reaction",moveLimit:27,title:"Chain reaction",
-   tutorial:"",instruction:"Crates, a lock, and a linked pair compete for the same routes. Order matters.",
-   gates:[
-     {side:"left",index:1,color:"purple"},
-     {side:"right",index:4,color:"red"},
-     {side:"top",index:2,color:"blue"},
-     {side:"bottom",index:3,color:"green"},
-     {side:"bottom",index:5,color:"yellow"}
-   ],
-   board:[
-    [null,"red",null,"crate","purple",null],
-    ["blue",null,"blue_chainA",null,null,"yellow"],
-    [null,"crate","blue_chainB",null,"green",null],
     [null,null,null,"crate",null,null],
-    ["purple",null,"blue_locked2",null,"red",null],
-    [null,"blue","green",null,"yellow",null]
-   ]},
-  {name:"The Gauntlet",moveLimit:30,title:"The gauntlet",
-   tutorial:"",instruction:"Everything you have learned is in play. Keep multiple exits open and avoid wasting moves.",
-   gates:[
-     {side:"top",index:0,color:"purple"},
-     {side:"top",index:4,color:"red"},
-     {side:"right",index:1,color:"yellow"},
-     {side:"right",index:4,color:"blue"},
-     {side:"bottom",index:2,color:"green"}
-   ],
-   board:[
-    ["purple",null,"crate",null,"red",null],
-    [null,"yellow",null,"blue_chainA",null,"blue"],
-    ["green",null,"crate","blue_chainB",null,null],
-    [null,"red",null,null,"purple",null],
-    ["blue_locked2",null,"crate","yellow",null,"green"],
-    [null,"blue",null,null,"red",null]
+    [null,"blue","blue_chainA",null,"yellow",null],
+    [null,"crate","blue_chainB",null,null,null],
+    [null,null,null,"green","crate",null],
+    [null,"purple","blue_locked2",null,"red",null],
+    [null,"blue",null,null,null,null]
    ]}
 
 ];
