@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.9.0</title>
+<title>ChainBreak V2.9.1</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -846,7 +846,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.9.0</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.9.1</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -1009,18 +1009,19 @@ const LEVELS=[
     [null,null,"crate",null,"red",null],
     [null,null,"crate",null,null,null]
    ]},
-  {name:"Park the Blocker",moveLimit:7,title:"Holding makes the opening",
-   tutorial:"",instruction:"The blue key is boxed in. Yellow cannot clear yet, so park it in Holding to open the route. Clear blue, return yellow, then clear yellow.",
+  {name:"Holding Required",moveLimit:10,title:"Nowhere else to go",
+   tutorial:"",instruction:"Yellow is completely pinned. Clear one blue, park yellow in Holding, then use the keyed blue to release the locked pieces.",
    gates:[
-     {side:"top",index:2,color:"blue"},
-     {side:"left",index:2,color:"yellow",keyIds:["blue_keyA"]}
+     {side:"left",index:0,color:"blue"},
+     {side:"bottom",index:4,color:"blue"},
+     {side:"right",index:5,color:"yellow",keyIds:["blue_keyA"]}
    ],
    board:[
+    ["yellow","blue_keyA","blue_locked2",null,null,null],
+    ["blue_locked2","blue_locked2",null,null,null,null],
     [null,null,null,null,null,null],
-    [null,null,"crate",null,null,null],
-    [null,"crate","blue_keyA","yellow",null,null],
-    [null,null,"crate",null,null,null],
     [null,null,null,null,null,null],
+    [null,null,null,null,"blue",null],
     [null,null,null,null,null,null]
    ]},
   {name:"Keymaster",moveLimit:16,title:"First challenge",
@@ -1088,20 +1089,98 @@ function devCanReachGate(level,pieceValue,gateColor,removeValues=[]){
   }
   return false;
 }
+function solveLevelState(level,{allowHolding=true,maxDepth=30}={}){
+  // Developer-only BFS solver. It models the same one-move abstractions used by
+  // gameplay: any connected board relocation, gate clears, crate hits,
+  // Holding/return, key-gate state, and the 2-blue locked-piece rule.
+  // Linked-pair search is intentionally excluded here; Level 8 has its separate
+  // pair-connectivity proof and pair-state search will be the next extension.
+  const start={b:level.board.flat(),t:[],o:[],cb:0,path:[]};
+  const color=v=>!v?null:COLORS.find(c=>v.startsWith(c))||null;
+  const locked=v=>v==="blue_locked2";
+  const idx=(r,c)=>r*6+c, rc=i=>[Math.floor(i/6),i%6];
+  const neigh=i=>{const [r,c]=rc(i),a=[];if(r)a.push(i-6);if(r<5)a.push(i+6);if(c)a.push(i-1);if(c<5)a.push(i+1);return a};
+  const target=g=>g.side==="top"?g.index:g.side==="bottom"?30+g.index:g.side==="left"?g.index*6:g.index*6+5;
+  const keyPresent=(s,k)=>s.b.includes(k)||s.t.includes(k);
+  const gateLocked=(s,g)=>(g.keyIds||[]).some(k=>keyPresent(s,k));
+  const norm=s=>s.b.join("|")+"#"+s.t.map((v,i)=>v+"@"+s.o[i]).join("|")+"#"+s.cb;
+  const openReach=(s,from)=>{
+    const seen=new Set([from]),q=[from],out=[];
+    while(q.length){const p=q.shift();for(const n of neigh(p))if(!seen.has(n)&&!s.b[n]){seen.add(n);q.push(n);out.push(n)}}
+    return out;
+  };
+  const normalizeLocks=s=>{
+    if(s.cb>=2)s.b=s.b.map(v=>v==="blue_locked2"?"blue":v);
+    return s;
+  };
+  const won=s=>!s.b.some(v=>color(v))&&s.t.length===0;
+  const clone=s=>({b:s.b.slice(),t:s.t.slice(),o:s.o.slice(),cb:s.cb,path:s.path.slice()});
+  const q=[start],seen=new Set([norm(start)]);
+  let qi=0,expanded=0;
+  while(qi<q.length){
+    const s=q[qi++];expanded++;
+    if(won(s))return {solvable:true,moves:s.path.length,path:s.path,expanded};
+    if(s.path.length>=maxDepth)continue;
+    const push=n=>{normalizeLocks(n);const k=norm(n);if(!seen.has(k)){seen.add(k);q.push(n)}};
+
+    for(let i=0;i<36;i++){
+      const v=s.b[i],c=color(v);
+      if(!v)continue;
+      if(v==="crate"||v==="crate1"){
+        const n=clone(s);n.b[i]=v==="crate"?"crate1":null;n.path.push(v==="crate"?"Hit crate":"Break crate");push(n);continue;
+      }
+      if(!c||locked(v)||v.includes("_chain"))continue;
+
+      const reach=openReach(s,i);
+      // Board-to-board relocation. On a large open component, most landing
+      // cells are strategically equivalent. Keep only cells beside an occupied
+      // cell plus gate targets; these are the placements that can change
+      // blocking/connectivity or immediately set up an exit.
+      const gateTargets=new Set(level.gates.map(target));
+      const strategic=reach.filter(d=>gateTargets.has(d)||neigh(d).some(n=>s.b[n]));
+      for(const d of strategic){
+        const n=clone(s);n.b[d]=v;n.b[i]=null;n.path.push(`Move ${v} ${i}->${d}`);push(n);
+      }
+      // Clear through any matching, unlocked gate whose target is reachable/open.
+      for(const g of level.gates.filter(g=>g.color===c&&!gateLocked(s,g))){
+        const gt=target(g);
+        if(s.b[gt]&&gt!==i)continue;
+        if(gt!==i&&!reach.includes(gt))continue;
+        const n=clone(s);n.b[i]=null;if(c==="blue")n.cb++;n.path.push(`Clear ${v} via ${g.side} gate`);push(n);
+      }
+      // Holding is a legal move regardless of board connectivity.
+      if(allowHolding&&s.t.length<4){
+        const n=clone(s);n.b[i]=null;n.t.push(v);n.o.push(i);n.path.push(`Hold ${v}`);push(n);
+      }
+    }
+    // Held singles can only return to their exact original cell.
+    if(allowHolding){
+      for(let ti=0;ti<s.t.length;ti++){
+        const origin=s.o[ti];if(s.b[origin])continue;
+        const n=clone(s),v=n.t[ti];n.b[origin]=v;n.t.splice(ti,1);n.o.splice(ti,1);n.path.push(`Return ${v}`);push(n);
+      }
+    }
+  }
+  return {solvable:false,moves:null,path:[],expanded};
+}
 function validatePrototypeLevels(){
-  const l8=LEVELS[7], l9=LEVELS[8];
+  const l8=LEVELS[7],l9=LEVELS[8];
   const l8Blocked=!devCanReachGate(l8,"blue_keyA","blue");
   const l8Opens=devCanReachGate(l8,"blue_keyA","blue",["blue_chainA","blue_chainB"]);
-  const l9Trapped=!devCanReachGate(l9,"blue_keyA","blue");
-  const l9OpensWhenYellowParked=devCanReachGate(l9,"blue_keyA","blue",["yellow"]);
-  const yellowGate=l9.gates.find(g=>g.color==="yellow");
-  const l9YellowLocked=!!(yellowGate&&yellowGate.keyIds&&yellowGate.keyIds.includes("blue_keyA"));
+  const withHolding=solveLevelState(l9,{allowHolding:true,maxDepth:14});
+  const withoutHolding=solveLevelState(l9,{allowHolding:false,maxDepth:14});
   const result={
     level8:{pass:l8Blocked&&l8Opens},
-    level9:{keyStartsTrapped:l9Trapped,keyReachableWhenYellowParked:l9OpensWhenYellowParked,
-      yellowCannotClearFirst:l9YellowLocked,pass:l9Trapped&&l9OpensWhenYellowParked&&l9YellowLocked}
+    level9:{
+      solvableWithHolding:withHolding.solvable,
+      minimumMoves:withHolding.moves,
+      solvableWithoutHolding:withoutHolding.solvable,
+      holdingMathematicallyRequired:withHolding.solvable&&!withoutHolding.solvable,
+      solution:withHolding.path,
+      pass:withHolding.solvable&&!withoutHolding.solvable
+    }
   };
-  console.table(result);
+  console.log("ChainBreak developer validation",result);
   return result;
 }
 function reachableFrom(sr,sc,ignoreCells=[]){
