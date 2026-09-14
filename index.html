@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.4.2</title>
+<title>ChainBreak V2.4.3</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -46,7 +46,7 @@ body{margin:0;min-height:100vh;min-height:100svh;background:linear-gradient(#061
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.4.2</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.4.3</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves<b id="moves">0</b></div>
   </div>
 
@@ -69,7 +69,7 @@ body{margin:0;min-height:100vh;min-height:100svh;background:linear-gradient(#061
   <button class="btn nextLevel" id="nextLevel">Next Level →</button>
 
   <div class="card how">
-    <b>Version 2.4.2 rules</b><br>
+    <b>Version 2.4.3 rules</b><br>
     Move colored pieces through connected empty spaces. Reach the matching gate on the top row to clear a piece. Press and drag a piece to see it follow your finger, or use tap controls.
     Holding is temporary: move a piece into a slot, then bring it back to any empty board space later.
     Brown crates take two hits to break. A locked blue piece shows how many other blue pieces must clear before it unlocks; then it becomes a normal blue piece.
@@ -381,7 +381,7 @@ function showTutorial(){
     if(!tutorialActive)return;
     if(currentLevel===0){
       const pe=document.querySelector('.cell[data-r="2"][data-c="4"]')||document.querySelector('.cell.piece');
-      const ge=document.querySelector('.exit[data-col="4"]');
+      const ge=document.querySelector('.exit[data-col="0"]');
       pe?.classList.add("hintPulse");ge?.classList.add("hintPulse");
       setTimeout(()=>{pe?.classList.remove("hintPulse");ge?.classList.remove("hintPulse")},2200);
     }
@@ -393,7 +393,11 @@ function completeTutorial(){
 function loadLevel(index,show=true){
   currentLevel=Math.max(0,Math.min(index,LEVELS.length-1));board=copyBoard(LEVELS[currentLevel].board);tray=[];moves=0;history=[];selected=null;cleared={};ended=false;dragState=null;tutorialActive=false;clearGhost();document.getElementById("nextLevel").classList.remove("show");setStatus(`Level ${currentLevel+1}: ${LEVELS[currentLevel].name}`);render();if(show)showTutorial();
 }
-function reset(){loadLevel(currentLevel,false)}
+function reset(){
+  // Reset should always rebuild the board and restart the lesson for this level.
+  document.getElementById("tutorial").classList.add("hidden");
+  loadLevel(currentLevel,true);
+}
 function undo(){if(!history.length)return;const s=history.pop();restore(s);setStatus("Last move undone.")}
 function pulseHint(pieceEl,gateEl,msg){
   document.querySelectorAll(".hintPulse").forEach(x=>x.classList.remove("hintPulse"));
@@ -422,17 +426,13 @@ function hint(){
 }
 document.getElementById("reset").onclick=reset;document.getElementById("undo").onclick=undo;document.getElementById("hint").onclick=hint;document.getElementById("nextLevel").onclick=()=>loadLevel(currentLevel+1,true);
 loadLevel(0,true);
+// Prototype builds change frequently, so disable offline caching while we test.
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(reg=>reg.unregister());
-  });
+  navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.map(reg=>reg.unregister()))).catch(()=>{});
 }
-
 if("caches" in window){
-  caches.keys().then(keys=>{
-    keys.forEach(key=>caches.delete(key));
-  });
-}}
+  caches.keys().then(keys=>Promise.all(keys.map(key=>caches.delete(key)))).catch(()=>{});
+}
 </script>
 </body>
 </html>
