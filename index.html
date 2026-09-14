@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.7.2</title>
+<title>ChainBreak V2.7.3</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -832,7 +832,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.7.2</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.7.3</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -1677,14 +1677,19 @@ function ensureLifeTimer(){
 }
 document.getElementById("refillLives").onclick=()=>{
   if(coins<200)return;
-  coins-=200;lives=5;
+  coins-=200;
+  lives=5;
   localStorage.setItem("chainbreakCoins",coins);
   localStorage.setItem("chainbreakLives",lives);
   localStorage.removeItem("chainbreakNextLifeAt");
   clearInterval(lifeClock);
   document.getElementById("coinCount").textContent=coins;
   document.getElementById("lifeCount").textContent=lives;
-  updateFailChoices();
+
+  // A full-life refill is a fresh attempt at the same level.
+  // Do not charge another life and do not replay the tutorial.
+  document.getElementById("failOverlay").classList.remove("show");
+  buildLevel(levelIndex,false);
 };
 
 </script>
