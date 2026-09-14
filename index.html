@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.5.3</title>
+<title>ChainBreak V2.5.4</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;min-height:100svh;background:linear-gradient(#061728,#0a2945);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;overscroll-behavior:none;touch-action:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;min-height:100svh;background:linear-gradient(#061728,#0a2945);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;overscroll-behavior:none}
 .app{max-width:660px;height:100svh;margin:auto;padding:calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px);display:flex;flex-direction:column;overflow:hidden}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .brand{font-size:28px;font-weight:900;letter-spacing:-1px}.tag{font-size:11px;letter-spacing:1.8px;color:var(--muted);margin-top:2px}.moves{text-align:right}.moves b{display:block;font-size:27px}.levelLabel{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:2px}
@@ -70,12 +70,83 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;
 .flashBlocked{animation:blockedCell .28s linear 2}
 @keyframes blockedCell{0%,100%{box-shadow:0 0 0 0 rgba(255,90,90,0)}50%{box-shadow:0 0 0 5px rgba(255,90,90,.85);background:#5c2130}}
 
+
+/* 2.5.4 fixed app layout */
+html,body{width:100%;height:100%;overflow:hidden}
+body{touch-action:manipulation}
+.app{
+  height:100svh;
+  max-height:100svh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 6px) 10px calc(env(safe-area-inset-bottom) + 6px);
+}
+.top{flex:0 0 auto}
+.brand{font-size:26px}
+.tag{font-size:9px}
+.moves b{font-size:24px}
+.card{margin-top:6px;padding:7px;border-radius:17px}
+
+/* The board area is deliberately sized rather than flex-collapsed. */
+.gameCard{flex:0 0 auto;display:block;min-height:0}
+.gameCard .arena{
+  width:min(100%,330px);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:26px minmax(0,1fr) 26px;
+  grid-template-rows:26px auto 26px;
+  gap:3px;
+}
+.gameCard .board{
+  width:100%;
+  aspect-ratio:1/1;
+  min-width:0;
+  min-height:0;
+}
+.gatesTop,.gatesBottom{gap:3px}
+.gatesLeft,.gatesRight{gap:3px}
+.exit{border-radius:9px;font-size:17px}
+.cell{border-radius:9px}
+.status{
+  min-height:32px;
+  margin-top:5px;
+  padding:5px 8px;
+  border-radius:11px;
+  font-size:11px;
+  line-height:1.2;
+}
+
+/* Compact coach strip: text + animation remain visible without stealing the board. */
+.tutorial{flex:0 0 auto;margin:6px 0 0}
+.tutorialCard{padding:7px 9px;border-radius:14px}
+.tutorialCard h2{font-size:14px;margin:0 0 2px}
+.tutorialCard p{font-size:10px;line-height:1.2}
+.tutorialHint{font-size:10px;line-height:1.2;margin-top:3px}
+.tutorialDemo{height:30px;margin-top:4px;border-radius:9px}
+.demoPiece,.demoGate{width:23px;height:23px;border-radius:7px;font-size:10px}
+.demoPiece{left:9px;bottom:4px}
+.demoGate{right:9px;top:4px}
+.demoFinger{font-size:14px;left:16px;bottom:0}
+@keyframes demoDrag{0%,20%{left:16px;bottom:0}70%,100%{left:calc(100% - 32px);bottom:7px}}
+
+/* Compact Holding and controls */
+.trayCard{flex:0 0 auto}
+.trayTitle{font-size:13px}
+.tray{gap:5px;margin-top:5px}
+.slot{height:47px;aspect-ratio:auto;border-radius:10px}
+.controls{flex:0 0 auto;gap:6px;margin-top:6px}
+.btn{padding:10px 7px;font-size:13px;border-radius:12px}
+
+/* Old rules are gone; never allow legacy copies to appear. */
+.how,.rules{display:none!important}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.3</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.4</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
@@ -87,7 +158,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;
       <div class="gatesRight" id="gatesRight"></div>
       <div class="gatesBottom" id="gatesBottom"></div>
     </div>
-    <div class="status" id="status">Tap a piece then tap its gate, or hold and drag it to the gate.</div>
+    <div class="status" id="status">Drag a piece through its matching gate.</div>
   </div>
 
 
@@ -111,14 +182,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;
     <button class="btn" id="hint">💡 Hint</button>
   </div>
   <button class="btn nextLevel" id="nextLevel" style="display:none!important">Next Level →</button>
-
-  <div class="card how">
-    <b>Version 2.5.3 rules</b><br>
-    Move colored pieces through connected empty spaces. Reach a matching gate on any edge to clear a piece. Not every row or column has a gate. Each level has a move limit; Undo restores the move you rewound. Press and drag a piece to see it follow your finger, or use tap controls.
-    Holding is temporary parking: a held piece must return to the exact space it came from before it can move or escape.
-    Brown crates take two hits to break. A locked blue piece shows how many other blue pieces must clear before it unlocks; then it becomes a normal blue piece.
-    Linked pieces show one link between them, move together, and can clear through a reachable blue gate in one move.
-  </div>
 </div>
 
 
