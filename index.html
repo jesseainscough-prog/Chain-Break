@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.6.9</title>
+<title>ChainBreak V2.7.0</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -794,7 +794,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.9</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.7.0</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -842,11 +842,21 @@ body{touch-action:manipulation}
 </div>
 
 
+<div class="failOverlay" id="adSimOverlay">
+  <div class="failCard">
+    <div class="failTitle">Rewarded Ad</div>
+    <div class="failSub" id="adSimText">Ad playing…</div>
+    <div id="adCountdown" style="font-size:36px;font-weight:900;margin:12px 0">3</div>
+    <button class="continueBig" id="claimAdMoves" style="display:none">Claim +5 Moves</button>
+    <div class="failSub" style="font-size:11px;margin-top:10px">Prototype simulation — no real ad is shown.</div>
+  </div>
+</div>
 <div class="failOverlay" id="failOverlay">
   <div class="failCard">
     <div class="failTitle">Out of Moves</div>
     <div class="failText">Keep this run going or start the level over.</div>
     <button class="continueBig" id="buyMoves">🪙 +5 Moves (50 Coins)</button>
+    <button class="continueBig" id="watchAdMoves">▶ Watch Ad (+5 Moves)</button>
     <button class="retryBig" id="retryLevel">❤️ Retry (-1 Life)</button>
     <div class="failSub" id="failSub"></div>
   </div>
@@ -1549,6 +1559,36 @@ if("serviceWorker" in navigator){
 if("caches" in window){
   caches.keys().then(keys=>Promise.all(keys.map(key=>caches.delete(key)))).catch(()=>{});
 }
+
+// V2.7.0 simulated rewarded-ad flow
+let rewardedAdTimer=null;
+document.getElementById("watchAdMoves").onclick=()=>{
+  const ov=document.getElementById("adSimOverlay");
+  const claim=document.getElementById("claimAdMoves");
+  const count=document.getElementById("adCountdown");
+  const text=document.getElementById("adSimText");
+  claim.style.display="none";
+  text.textContent="Ad playing…";
+  let n=3; count.textContent=n;
+  ov.classList.add("show");
+  clearInterval(rewardedAdTimer);
+  rewardedAdTimer=setInterval(()=>{
+    n--;
+    if(n>0){count.textContent=n;return;}
+    clearInterval(rewardedAdTimer);
+    count.textContent="✓";
+    text.textContent="Reward earned";
+    claim.style.display="";
+  },700);
+};
+document.getElementById("claimAdMoves").onclick=()=>{
+  document.getElementById("adSimOverlay").classList.remove("show");
+  document.getElementById("failOverlay").classList.remove("show");
+  moveLimit+=5;
+  ended=false;
+  render();
+};
+
 </script>
 </body>
 </html>
