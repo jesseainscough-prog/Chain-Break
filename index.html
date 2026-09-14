@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.6.5</title>
+<title>ChainBreak V2.6.6</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -620,13 +620,24 @@ body{touch-action:manipulation}
 }
 .failSub{font-size:12px;color:#c8aab5;margin-top:10px}
 
+
+/* 2.6.6 lives + continue economy */
+.lifeHud{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:13px;font-weight:1000;margin-top:2px}
+.continueBig{
+  margin-top:20px;width:100%;padding:14px 18px;border:none;border-radius:16px;
+  font-size:16px;font-weight:1000;background:#fbbf24;color:#2b1a00;
+  touch-action:manipulation;cursor:pointer
+}
+.continueBig:disabled,.retryBig:disabled{opacity:.42;cursor:default}
+.retryBig{margin-top:10px}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.5</span></div></div>
-    <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.6</span></div></div>
+    <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
   <div class="card gameCard">
@@ -676,9 +687,10 @@ body{touch-action:manipulation}
 <div class="failOverlay" id="failOverlay">
   <div class="failCard">
     <div class="failTitle">Out of Moves</div>
-    <div class="failText">You ran out of moves before clearing the level.</div>
-    <button class="retryBig" id="retryLevel">Retry Level</button>
-    <div class="failSub">Later, coins can be used here for boosts like +5 moves.</div>
+    <div class="failText">Keep this run going or start the level over.</div>
+    <button class="continueBig" id="buyMoves">🪙 Spend 50 Coins · +5 Moves</button>
+    <button class="retryBig" id="retryLevel">❤️ Retry · Lose 1 Life</button>
+    <div class="failSub" id="failSub"></div>
   </div>
 </div>
 
@@ -714,6 +726,7 @@ let gates=[];
 let currentLevel=0;
 let board,tray,trayOrigins,moves,moveLimit,history,selected,cleared,ended,dragState,dragGhost,dragOriginEl,tutorialActive=false;
 let coins=+(localStorage.getItem("chainbreakCoins")||0);
+let lives=+(localStorage.getItem("chainbreakLives")||5);
 
 
 const copyBoard=b=>b.map(r=>r.slice());
@@ -791,9 +804,18 @@ function showCompleteOverlay(){
   document.getElementById("nextOverlay").textContent=currentLevel<LEVELS.length-1?"Next Level":"Play Again";
   document.getElementById("completeOverlay").classList.add("show");
 }
+function updateFailChoices(){
+  const buy=document.getElementById("buyMoves");
+  const retry=document.getElementById("retryLevel");
+  if(buy)buy.disabled=coins<50;
+  if(retry)retry.disabled=lives<=0;
+  const sub=document.getElementById("failSub");
+  if(sub)sub.textContent=`${lives} ${lives===1?"life":"lives"} remaining · ${coins} coins`;
+}
 function showFailOverlay(){
   clearCoach?.();
   document.getElementById("tutorialOverlay")?.classList.remove("show");
+  updateFailChoices();
   document.getElementById("failOverlay")?.classList.add("show");
 }
 function checkWin(){
@@ -867,7 +889,7 @@ function trayToBoard(i,r,c){
   setStatus(`${cap(baseColor(v))} returned to its original space.`);render();checkWin();return true
 }
 function render(){
-  document.getElementById("moves").textContent=Math.max(0,moveLimit-moves);document.getElementById("levelNum").textContent=currentLevel+1;document.getElementById("coinCount").textContent=coins;document.getElementById("trayCount").textContent=`${tray.length}/4`;document.getElementById("undo").disabled=history.length===0;
+  document.getElementById("moves").textContent=Math.max(0,moveLimit-moves);document.getElementById("levelNum").textContent=currentLevel+1;document.getElementById("coinCount").textContent=coins;document.getElementById("lifeCount").textContent=lives;document.getElementById("trayCount").textContent=`${tray.length}/4`;document.getElementById("undo").disabled=history.length===0;
   const arrows={top:"↑",bottom:"↓",left:"←",right:"→"};
   ["top","bottom","left","right"].forEach(side=>{
     const host=document.getElementById("gates"+side[0].toUpperCase()+side.slice(1));host.innerHTML="";
@@ -1339,7 +1361,19 @@ document.getElementById("reset").onclick=reset;document.getElementById("undo").o
 
 
 
+document.getElementById("buyMoves").onclick=()=>{
+  if(coins<50)return;
+  coins-=50;
+  localStorage.setItem("chainbreakCoins",coins);
+  moveLimit+=5;
+  ended=false;
+  document.getElementById("failOverlay").classList.remove("show");
+  render();
+};
 document.getElementById("retryLevel").onclick=()=>{
+  if(lives<=0)return;
+  lives-=1;
+  localStorage.setItem("chainbreakLives",lives);
   document.getElementById("failOverlay").classList.remove("show");
   loadLevel(currentLevel,false);
 };
