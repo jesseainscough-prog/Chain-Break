@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.7</title>
+<title>ChainBreak V2.8.8</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -846,7 +846,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.7</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.8</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -995,55 +995,51 @@ const LEVELS=[
     [null,null,null,null,"red",null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Blue Before Locked",moveLimit:20,title:"Open the lock",
-   tutorial:"",instruction:"The locked blue cannot move yet. Break the crate to reach the blues that unlock it.",
+  {name:"Move the Chain",moveLimit:9,title:"Make room for the key",
+   tutorial:"",instruction:"The linked pair is blocking the keyed blue. Move the chain out of the way, clear the key, then use the red gate.",
    gates:[
      {side:"top",index:2,color:"blue"},
-     {side:"right",index:3,color:"red"},
-     {side:"bottom",index:4,color:"green"}
+     {side:"right",index:3,color:"red",keyIds:["blue_keyA"]}
    ],
    board:[
     [null,null,null,null,null,null],
-    [null,null,"blue","crate","blue",null],
+    [null,null,"blue_chainA",null,null,null],
+    [null,null,"blue_chainB",null,null,null],
+    [null,null,"blue_keyA","red",null,null],
     [null,null,null,null,null,null],
-    [null,"red",null,"blue_locked2",null,null],
-    [null,null,null,null,"green",null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Park Then Break",moveLimit:22,title:"Park, break, return",
-   tutorial:"",instruction:"A piece is occupying the space you need while a crate blocks the route. Holding creates the room to solve it.",
+  {name:"Park the Blocker",moveLimit:8,title:"Holding makes the opening",
+   tutorial:"",instruction:"The yellow piece is blocking the keyed blue's only opening. Park yellow in Holding, clear the key, then finish the level.",
    gates:[
-     {side:"left",index:2,color:"yellow"},
-     {side:"right",index:2,color:"red"},
-     {side:"top",index:3,color:"blue"},
-     {side:"bottom",index:3,color:"green"}
+     {side:"top",index:2,color:"blue"},
+     {side:"right",index:4,color:"red",keyIds:["blue_keyA"]},
+     {side:"left",index:2,color:"yellow"}
    ],
    board:[
     [null,null,null,null,null,null],
-    [null,null,null,"blue",null,null],
-    [null,"yellow","red","crate",null,null],
-    [null,null,null,"green",null,null],
-    [null,null,null,null,null,null],
+    [null,null,"crate",null,null,null],
+    [null,"crate","blue_keyA","yellow","crate",null],
+    [null,null,"crate",null,null,null],
+    [null,null,null,null,"red",null],
     [null,null,null,null,null,null]
    ]},
-  {name:"The Break Room",moveLimit:28,title:"The break room",
-   tutorial:"",instruction:"Every obstacle has a purpose. Open the right routes, unlock blue, and maneuver the linked pair.",
+  {name:"Keymaster",moveLimit:18,title:"First challenge",
+   tutorial:"",instruction:"Open the routes in the right order. Free the keys, unlock the red exit, maneuver the chain, and release the locked blue.",
    gates:[
      {side:"top",index:2,color:"blue"},
-     {side:"right",index:1,color:"yellow"},
-     {side:"right",index:4,color:"red"},
+     {side:"right",index:4,color:"red",keyIds:["green_keyA","blue_keyA"]},
      {side:"bottom",index:3,color:"green"},
-     {side:"left",index:4,color:"purple"}
+     {side:"left",index:1,color:"yellow"}
    ],
    board:[
-    [null,null,null,"crate",null,null],
-    [null,"blue","blue_chainA",null,"yellow",null],
-    [null,"crate","blue_chainB",null,null,null],
-    [null,null,null,"green","crate",null],
-    [null,"purple","blue_locked2",null,"red",null],
-    [null,"blue",null,null,null,null]
+    [null,null,null,null,null,null],
+    [null,"yellow","blue_chainA",null,null,null],
+    [null,"crate","blue_chainB","crate",null,null],
+    [null,null,"green_keyA",null,"blue_keyA",null],
+    [null,null,"crate","green","red",null],
+    [null,null,null,"blue_locked2",null,null]
    ]}
-
 ];
 let gates=[];
 let currentLevel=0;
