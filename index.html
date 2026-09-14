@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.6</title>
+<title>ChainBreak V2.8.7</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -828,7 +828,9 @@ body{touch-action:manipulation}
 #refillLives{min-height:54px!important;font-size:17px!important;background:linear-gradient(180deg,#ef5350,#d83d3a)!important;color:white!important}
 
 .edgeGate.lockedGate{filter:saturate(.45) brightness(.68);opacity:.88;position:relative}
-.edgeGate.lockedGate::after{content:attr(data-lock);position:absolute;inset:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;line-height:1;background:rgba(7,25,43,.62);border:1px solid rgba(255,255,255,.45);border-radius:inherit;white-space:nowrap;z-index:5}
+.edgeGate.lockedGate::after{content:attr(data-lock);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:block;font-size:11px;font-weight:900;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9);white-space:nowrap;z-index:5}
+.gatesLeft .edgeGate.lockedGate::after,.gatesRight .edgeGate.lockedGate::after{transform:translate(-50%,-50%) rotate(90deg)}
+.edgeGate.lockedGate{box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),inset 0 0 14px rgba(0,0,0,.48)}
 .edgeGate.lockedGate{color:rgba(255,255,255,.22)}
 #testLevelModal{position:fixed;inset:0;background:rgba(0,8,18,.82);z-index:12000;display:none;align-items:center;justify-content:center;padding:24px}
 #testLevelModal.show{display:flex}
@@ -837,14 +839,14 @@ body{touch-action:manipulation}
 .testLevelGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .testLevelChoice{border:1px solid rgba(255,255,255,.2);background:#143653;color:#fff;border-radius:10px;padding:11px 4px;font-weight:900;font-size:14px}
 #closeTestLevels{width:100%;margin-top:12px;border:0;border-radius:10px;padding:10px;background:#20384d;color:#fff;font-weight:800}
-.cell.unlockTarget{position:relative}
-.cell.unlockTarget::after{content:"🔑";position:absolute;right:4px;top:4px;font-size:13px;line-height:1;z-index:30;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+.cell.unlockTarget,.mini.unlockTarget{position:relative}
+.cell.unlockTarget::after,.mini.unlockTarget::after{content:"🔑";position:absolute;right:4px;top:4px;font-size:13px;line-height:1;z-index:30;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.6</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.7</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -953,46 +955,44 @@ const LEVELS=[
    tutorial:"",instruction:"The red gate is locked. Clear 2 blue pieces to open it, then clear red.",
    gates:[
      {side:"top",index:2,color:"green"},
-     {side:"right",index:2,color:"red",keyCells:["2,5","3,2"]},
+     {side:"right",index:2,color:"red",keyIds:["blue_keyA","blue_keyB"]},
      {side:"bottom",index:2,color:"blue"}
    ],
    board:[
     [null,null,null,null,null,null],
     [null,null,"green",null,null,null],
-    [null,"red",null,null,null,"blue"],
-    [null,null,"blue",null,null,null],
+    [null,"red",null,null,null,"blue_keyA"],
+    [null,null,"blue_keyB",null,null,null],
     [null,null,null,null,null,null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Two Doors",moveLimit:16,title:"Two doors",
-   tutorial:"",instruction:"Two crates control two important routes. Decide which door to open first.",
+  {name:"Mixed Keys",moveLimit:7,title:"Keys can be any color",
+   tutorial:"",instruction:"Clear both keyed pieces. Their colors do not matter — the keys unlock the red gate.",
    gates:[
-     {side:"left",index:2,color:"red"},
-     {side:"right",index:3,color:"yellow"},
      {side:"top",index:2,color:"blue"},
-     {side:"bottom",index:3,color:"green"}
+     {side:"bottom",index:3,color:"green"},
+     {side:"right",index:2,color:"red",keyIds:["blue_keyA","green_keyA"]}
    ],
    board:[
     [null,null,null,null,null,null],
-    [null,null,"blue",null,null,null],
-    [null,"crate","red",null,null,null],
-    [null,null,null,"green","crate",null],
-    [null,null,null,"yellow",null,null],
+    [null,null,"blue_keyA",null,null,null],
+    [null,"red",null,null,null,null],
+    [null,null,null,"green_keyA",null,null],
+    [null,null,null,null,null,null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Make Room",moveLimit:18,title:"Make room for the chain",
-   tutorial:"",instruction:"The linked pair cannot squeeze past the crate. Clear space before routing both blocks out.",
+  {name:"Break Out the Key",moveLimit:8,title:"Free the key",
+   tutorial:"",instruction:"The blue key is trapped. Break a crate to free it, then unlock the red gate.",
    gates:[
-     {side:"right",index:2,color:"blue"},
-     {side:"left",index:4,color:"red"},
-     {side:"bottom",index:4,color:"green"}
+     {side:"top",index:2,color:"blue"},
+     {side:"right",index:4,color:"red",keyIds:["blue_keyA"]}
    ],
    board:[
     [null,null,null,null,null,null],
-    [null,null,"blue_chainA",null,null,null],
-    [null,null,"blue_chainB","crate",null,null],
-    [null,null,null,null,null,null],
-    [null,"red",null,"green",null,null],
+    [null,null,"crate",null,null,null],
+    [null,"crate","blue_keyA","crate",null,null],
+    [null,null,"crate",null,null,null],
+    [null,null,null,null,"red",null],
     [null,null,null,null,null,null]
    ]},
   {name:"Blue Before Locked",moveLimit:20,title:"Open the lock",
@@ -1252,7 +1252,7 @@ function render(){
       if(o?.type==="chain"&&o.cells.some(p=>p.r===r&&p.c===c))el.classList.add("reachable");
     }
     if(v){
-      el.classList.add("piece");const color=baseColor(v);if(color)el.classList.add(color);if(color&&cellIsKey(r,c))el.classList.add("unlockTarget");if(isChain(v))el.classList.add("chain");if(v==="crate"||v==="crate1"){el.classList.add("crate");if(v==="crate1")el.classList.add("damaged");}if(isLocked(v)){el.classList.add("lockedPiece");const sp=document.createElement("span");sp.className="lockCount";sp.textContent=lockRemaining();el.appendChild(sp)}
+      el.classList.add("piece");const color=baseColor(v);if(color)el.classList.add(color);if(color&&isKeyPiece(v))el.classList.add("unlockTarget");if(isChain(v))el.classList.add("chain");if(v==="crate"||v==="crate1"){el.classList.add("crate");if(v==="crate1")el.classList.add("damaged");}if(isLocked(v)){el.classList.add("lockedPiece");const sp=document.createElement("span");sp.className="lockCount";sp.textContent=lockRemaining();el.appendChild(sp)}
       if(isChain(v)){
         el.classList.add("chainPiece");
         const cells=chainCells(); const other=cells.find(([rr,cc])=>rr!==r||cc!==c);
@@ -1281,24 +1281,25 @@ function render(){
     const s=document.createElement("div");s.className="slot";s.dataset.slot=i;
     if(selected&&selected.type==="board"&&i>=tray.length)s.classList.add("target");
     if(tray[i]){
-      const m=document.createElement("div");m.className=`mini ${baseColor(tray[i])||"blue"}`;if(isChain(tray[i]))m.textContent="🔗";
+      const m=document.createElement("div");m.className=`mini ${baseColor(tray[i])||"blue"}`;if(isChain(tray[i]))m.textContent="🔗";if(isKeyPiece(tray[i]))m.classList.add("unlockTarget");
       if(selected&&selected.type==="tray"&&selected.i===i)m.style.outline="3px solid white";
       m.addEventListener("click",e=>{e.stopPropagation();selectTray(i)});bindDrag(m,{type:"tray",i});s.appendChild(m)
     }
     s.addEventListener("click",()=>slotTap(i));t.appendChild(s)
   }
 }
-function keyCellStillPresent(key){
-  const [r,c]=key.split(",").map(Number);
-  return !!baseColor(board[r]?.[c]);
+function keyStillPresent(keyId){
+  if(board.flat().includes(keyId))return true;
+  return tray.includes(keyId);
 }
 function gateLockRemaining(g){
-  if(!g||!g.keyCells)return 0;
-  return g.keyCells.reduce((n,k)=>n+(keyCellStillPresent(k)?1:0),0);
+  if(!g||!g.keyIds)return 0;
+  return g.keyIds.reduce((n,id)=>n+(keyStillPresent(id)?1:0),0);
 }
 function gateIsLocked(g){return gateLockRemaining(g)>0}
-function cellIsKey(r,c){
-  return (LEVELS[currentLevel].gates||[]).some(g=>gateIsLocked(g)&&(g.keyCells||[]).includes(`${r},${c}`));
+function isKeyPiece(v){
+  if(!v)return false;
+  return (LEVELS[currentLevel].gates||[]).some(g=>gateIsLocked(g)&&(g.keyIds||[]).includes(v));
 }
 function lockedGateMessage(g){
   const n=gateLockRemaining(g);
