@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.6.2</title>
+<title>ChainBreak V2.6.3</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -460,12 +460,81 @@ body{touch-action:manipulation}
   50%{box-shadow:0 0 0 4px rgba(125,211,252,.45),0 0 24px rgba(125,211,252,.35)}
 }
 
+
+/* 2.6.3 exact edge-gate geometry.
+   With 1px gaps, the arena is exactly:
+   gate + gap + 6 board cells/5 gaps + gap + gate.
+   That makes every edge gate exactly the same square as a board cell. */
+.gameCard .arena{
+  --g:1px;
+  --cell:calc((100% - 7px) / 8);
+  width:min(100%,430px);
+  aspect-ratio:auto;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:var(--cell) minmax(0,1fr) var(--cell);
+  grid-template-rows:var(--cell) auto var(--cell);
+  column-gap:var(--g);
+  row-gap:var(--g);
+  align-items:stretch;
+  justify-items:stretch;
+  overflow:visible;
+}
+.gameCard .board{
+  grid-column:2;
+  grid-row:2;
+  width:100%;
+  height:auto;
+  aspect-ratio:1/1;
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  grid-template-rows:repeat(6,1fr);
+  gap:var(--g);
+}
+.gatesTop,.gatesBottom{
+  width:100%;
+  height:var(--cell);
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:var(--g);
+  align-self:stretch!important;
+}
+.gatesLeft,.gatesRight{
+  width:var(--cell);
+  height:100%;
+  display:grid;
+  grid-template-rows:repeat(6,1fr);
+  gap:var(--g);
+  align-self:stretch!important;
+}
+.gatesTop{grid-column:2;grid-row:1}
+.gatesBottom{grid-column:2;grid-row:3}
+.gatesLeft{grid-column:1;grid-row:2}
+.gatesRight{grid-column:3;grid-row:2}
+
+.gateBlank,
+.gatesTop .exit,.gatesBottom .exit,
+.gatesLeft .exit,.gatesRight .exit{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  aspect-ratio:auto!important;
+  align-self:stretch;
+  justify-self:stretch;
+}
+.gatesTop .exit,.gatesBottom .exit,
+.gatesLeft .exit,.gatesRight .exit{
+  border-radius:9px;
+  font-size:18px;
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.2</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.3</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
