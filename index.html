@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.5.4</title>
+<title>ChainBreak V2.5.7</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -65,7 +65,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;
 .completeStars{font-size:34px;letter-spacing:6px;margin:8px 0 4px}
 .completeScore{font-size:17px;font-weight:900;margin-top:8px}
 .coinReward{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:20px;font-weight:1000}
-.nextBig{margin-top:18px;width:100%;padding:14px 18px;border:none;border-radius:16px;font-size:18px;font-weight:1000;background:#22c55e;color:#06220f}
+.nextBig{margin-top:18px;width:100%;padding:14px 18px;border:none;border-radius:16px;font-size:18px;font-weight:1000;background:#22c55e;color:#06220f;cursor:pointer;touch-action:manipulation;position:relative;z-index:2}
 .shopNote{font-size:12px;color:var(--muted);margin-top:8px}
 .flashBlocked{animation:blockedCell .28s linear 2}
 @keyframes blockedCell{0%,100%{box-shadow:0 0 0 0 rgba(255,90,90,0)}50%{box-shadow:0 0 0 5px rgba(255,90,90,.85);background:#5c2130}}
@@ -141,12 +141,128 @@ body{touch-action:manipulation}
 /* Old rules are gone; never allow legacy copies to appear. */
 .how,.rules{display:none!important}
 
+
+/* 2.5.5 gate alignment fix */
+.gameCard .arena{
+  width:min(100%,330px);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr) 28px;
+  grid-template-rows:34px auto 34px;
+  column-gap:4px;
+  row-gap:7px;
+  overflow:visible;
+}
+.gatesTop{grid-column:2;grid-row:1;align-self:end;z-index:3}
+.gatesBottom{grid-column:2;grid-row:3;align-self:start;z-index:3}
+.gatesLeft{grid-column:1;grid-row:2;z-index:3}
+.gatesRight{grid-column:3;grid-row:2;z-index:3}
+.gameCard .board{
+  grid-column:2;
+  grid-row:2;
+  position:relative;
+  z-index:1;
+  width:100%;
+  aspect-ratio:1/1;
+}
+.gatesTop .exit,.gatesBottom .exit{height:34px;aspect-ratio:auto}
+.gatesLeft .exit,.gatesRight .exit{width:28px;aspect-ratio:auto}
+
+
+/* 2.5.7 spacious board + tutorial practice overlay */
+.gameCard{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px;
+}
+.gameCard .arena{
+  width:min(100%,410px);
+  margin:0 auto;
+  grid-template-columns:32px minmax(0,1fr) 32px;
+  grid-template-rows:38px auto 38px;
+  column-gap:5px;
+  row-gap:8px;
+}
+.gameCard .board{width:100%;aspect-ratio:1/1}
+.cell{border-radius:11px}
+.exit{border-radius:10px}
+.trayCard{margin-top:7px;padding:7px}
+.trayTitle{font-size:13px}
+.slot{height:54px}
+.controls{margin-top:7px;gap:8px}
+#undo{display:none!important}
+.controls .btn{flex:1;padding:12px 8px;font-size:15px}
+
+/* Main app no longer shows tutorial/status chrome. */
+#tutorial,.tutorial{display:none!important}
+#status{display:none!important}
+
+/* Interactive tutorial appears over the game, then disappears. */
+.tutorialOverlay{
+  position:fixed;
+  inset:0;
+  z-index:11000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(3,12,22,.78);
+  backdrop-filter:blur(9px);
+}
+.tutorialOverlay.show{display:flex}
+.tutorialPop{
+  width:min(92vw,430px);
+  background:linear-gradient(180deg,#173b60,#0d263f);
+  border:1px solid #456f94;
+  border-radius:26px;
+  padding:22px;
+  box-shadow:0 28px 70px #000a;
+  text-align:center;
+}
+.tutorialPopTitle{font-size:26px;font-weight:1000}
+.tutorialPopText{font-size:15px;line-height:1.35;color:#d9e8f5;margin-top:7px}
+.tutorialPractice{
+  position:relative;
+  height:140px;
+  margin-top:16px;
+  border-radius:20px;
+  background:#092039;
+  border:1px solid #244b6e;
+  overflow:hidden;
+  touch-action:none;
+}
+.practicePiece,.practiceGate{
+  position:absolute;
+  width:58px;
+  height:58px;
+  border-radius:16px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.2),0 8px 18px #0007;
+}
+.practicePiece{left:30px;top:41px;touch-action:none;z-index:3}
+.practiceGate{right:30px;top:41px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:1000}
+.practiceArrow{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:32px;
+  opacity:.65;
+}
+.tutorialPopHint{font-size:13px;font-weight:900;color:#7dd3fc;margin-top:12px}
+.practicePiece.dragging{transform:scale(1.08);filter:brightness(1.12)}
+.practiceGate.ready{box-shadow:0 0 0 5px rgba(125,211,252,.35),0 0 28px rgba(125,211,252,.5)}
+.practiceGate.success{animation:practiceSuccess .28s ease-out 2}
+@keyframes practiceSuccess{50%{transform:scale(1.12);filter:brightness(1.25)}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.4</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.7</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
@@ -158,18 +274,8 @@ body{touch-action:manipulation}
       <div class="gatesRight" id="gatesRight"></div>
       <div class="gatesBottom" id="gatesBottom"></div>
     </div>
-    <div class="status" id="status">Drag a piece through its matching gate.</div>
+    <div class="status" id="status" style="display:none"></div>
   </div>
-
-
-<div class="tutorial" id="tutorial">
-  <div class="tutorialCard">
-    <h2 id="tutorialTitle">How to play</h2>
-    <p id="tutorialText">Drag a colored piece to the matching gate.</p>
-    <div class="tutorialHint">Try it on the board above — the lesson disappears after your first successful drag.</div>
-    <div class="tutorialDemo"><div class="demoPiece red">●</div><div class="demoGate red">↑</div><div class="demoFinger">☝️</div></div>
-  </div>
-</div>
 
   <div class="card trayCard">
     <div class="trayTitle"><span>Holding Slots</span><span id="trayCount">0/4</span></div>
@@ -184,6 +290,20 @@ body{touch-action:manipulation}
   <button class="btn nextLevel" id="nextLevel" style="display:none!important">Next Level →</button>
 </div>
 
+
+
+<div class="tutorialOverlay" id="tutorialOverlay">
+  <div class="tutorialPop">
+    <div class="tutorialPopTitle" id="tutorialPopTitle">Match the colors</div>
+    <div class="tutorialPopText" id="tutorialPopText">Drag the cube to the matching gate.</div>
+    <div class="tutorialPractice" id="tutorialPractice">
+      <div class="practicePiece red" id="practicePiece"></div>
+      <div class="practiceArrow">→</div>
+      <div class="practiceGate red" id="practiceGate">↑</div>
+    </div>
+    <div class="tutorialPopHint">Try it: drag the cube into the gate.</div>
+  </div>
+</div>
 
 <div class="completeOverlay" id="completeOverlay">
   <div class="completeCard">
@@ -556,7 +676,7 @@ function tryPassThroughGate(src,x,y){
   gateTap(gate.dataset.side,+gate.dataset.index);
   if(moves>before){
     if(dragState)dragState.resolved=true;
-    clearGhost();completeTutorial();return true;
+    clearGhost();return true;
   }
   return false;
 }
@@ -580,7 +700,7 @@ function finishDrag(src,x,y){
   else if(src.type==="board"&&slot)boardToTray(src.r,src.c);
   else if(src.type==="tray"&&cell&&!cell.classList.contains("piece"))trayToBoard(src.i,+cell.dataset.r,+cell.dataset.c);
   else setStatus(src.type==="tray"?"Return the held piece to its highlighted original space.":"Drop on an open space, holding slot, or matching gate.");
-  if(moves>before)completeTutorial();
+  
 }
 function startDrag(e,src){
   if(!validDragSource(src))return;
@@ -612,10 +732,32 @@ function bindDrag(el,src){
   el.addEventListener("pointerdown",e=>startDrag(e,src));
   el.addEventListener("touchstart",e=>startTouchDrag(e,src),{passive:true});
 }
+function tutorialColorForLevel(){
+  const d=LEVELS[currentLevel]?.demo;
+  return d?.color||"red";
+}
 function showTutorial(){
-  const lvl=LEVELS[currentLevel];tutorialActive=true;document.getElementById("tutorialTitle").textContent=lvl.title||`Level ${currentLevel+1}: ${lvl.name}`;document.getElementById("tutorialText").textContent=lvl.tutorial;document.querySelector(".tutorialHint").textContent=lvl.instruction;document.getElementById("tutorial").classList.remove("hidden");
-  const dp=document.querySelector(".demoPiece"),dg=document.querySelector(".demoGate");dp.className=`demoPiece ${lvl.demo?.color||"red"}`;dg.className=`demoGate ${lvl.demo?.color||"red"}`;dg.textContent={top:"↑",bottom:"↓",left:"←",right:"→"}[lvl.demo?.side||"top"];
-  setTimeout(()=>{if(!tutorialActive)return;const color=lvl.demo?.color||"red";const pe=[...document.querySelectorAll(".cell.piece")].find(x=>x.classList.contains(color));const ge=[...document.querySelectorAll(".exit")].find(x=>gateAt(x.dataset.side,+x.dataset.index)?.color===color);pe?.classList.add("hintPulse");ge?.classList.add("hintPulse");setTimeout(()=>{pe?.classList.remove("hintPulse");ge?.classList.remove("hintPulse")},2200)},250);
+  const level=LEVELS[currentLevel];
+  if(!level?.tutorial)return;
+  tutorialActive=true;
+  const overlay=document.getElementById("tutorialOverlay");
+  const title=document.getElementById("tutorialPopTitle");
+  const text=document.getElementById("tutorialPopText");
+  const piece=document.getElementById("practicePiece");
+  const gate=document.getElementById("practiceGate");
+  const color=tutorialColorForLevel();
+  title.textContent=level.title||level.name||"How to play";
+  text.textContent=level.tutorial+" "+(level.instruction||"");
+  piece.className=`practicePiece ${color}`;
+  gate.className=`practiceGate ${color}`;
+  gate.textContent=level.demo?.side==="left"?"←":level.demo?.side==="right"?"→":level.demo?.side==="bottom"?"↓":"↑";
+  piece.style.left="30px";piece.style.top="41px";
+  overlay.classList.add("show");
+}
+function completeTutorial(){
+  if(!tutorialActive)return;
+  tutorialActive=false;
+  document.getElementById("tutorialOverlay")?.classList.remove("show");
 }
 function completeTutorial(){
   if(!tutorialActive)return;tutorialActive=false;document.getElementById("tutorial").classList.add("hidden");setStatus("Nice — you got it! Keep going. ✅");
@@ -640,6 +782,54 @@ function hint(){
   for(let r=0;r<6;r++)for(let c=0;c<6;c++)if(board[r][c]==="crate"||board[r][c]==="crate1"){pulseHint(document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`),null,"Hint: try breaking the flashing crate to open a route.");return}setStatus("Hint: move a blocker or use Holding to open a route.")
 }
 document.getElementById("reset").onclick=reset;document.getElementById("undo").onclick=undo;document.getElementById("hint").onclick=hint;document.getElementById("nextLevel").onclick=()=>loadLevel(currentLevel+1,true);
+
+(function bindTutorialPractice(){
+  const piece=document.getElementById("practicePiece");
+  const gate=document.getElementById("practiceGate");
+  const area=document.getElementById("tutorialPractice");
+  let dragging=false,offX=0,offY=0;
+  const gateHit=(x,y)=>{
+    const r=gate.getBoundingClientRect();
+    return x>=r.left-18&&x<=r.right+18&&y>=r.top-18&&y<=r.bottom+18;
+  };
+  const start=(x,y)=>{
+    const r=piece.getBoundingClientRect();
+    dragging=true;offX=x-r.left;offY=y-r.top;piece.classList.add("dragging");
+  };
+  const move=(x,y)=>{
+    if(!dragging)return;
+    const ar=area.getBoundingClientRect();
+    const left=Math.max(0,Math.min(ar.width-piece.offsetWidth,x-ar.left-offX));
+    const top=Math.max(0,Math.min(ar.height-piece.offsetHeight,y-ar.top-offY));
+    piece.style.left=left+"px";piece.style.top=top+"px";
+    gate.classList.toggle("ready",gateHit(x,y));
+  };
+  const end=(x,y)=>{
+    if(!dragging)return;
+    dragging=false;piece.classList.remove("dragging");
+    if(gateHit(x,y)){
+      gate.classList.remove("ready");
+      gate.classList.add("success");
+      if(navigator.vibrate)try{navigator.vibrate(20)}catch(e){}
+      setTimeout(()=>{gate.classList.remove("success");completeTutorial();},220);
+    }else{
+      piece.style.left="30px";piece.style.top="41px";gate.classList.remove("ready");
+    }
+  };
+  piece.addEventListener("pointerdown",e=>{e.preventDefault();piece.setPointerCapture?.(e.pointerId);start(e.clientX,e.clientY)});
+  piece.addEventListener("pointermove",e=>{if(dragging){e.preventDefault();move(e.clientX,e.clientY)}});
+  piece.addEventListener("pointerup",e=>{e.preventDefault();end(e.clientX,e.clientY)});
+  piece.addEventListener("pointercancel",()=>{dragging=false;piece.style.left="30px";piece.style.top="41px";gate.classList.remove("ready")});
+  piece.addEventListener("touchstart",e=>{const t=e.touches[0];if(t){e.preventDefault();start(t.clientX,t.clientY)}},{passive:false});
+  piece.addEventListener("touchmove",e=>{const t=e.touches[0];if(t&&dragging){e.preventDefault();move(t.clientX,t.clientY)}},{passive:false});
+  piece.addEventListener("touchend",e=>{const t=e.changedTouches[0];if(t){e.preventDefault();end(t.clientX,t.clientY)}},{passive:false});
+})();
+
+document.getElementById("nextOverlay").onclick=()=>{
+  document.getElementById("completeOverlay").classList.remove("show");
+  if(currentLevel<LEVELS.length-1) loadLevel(currentLevel+1,true);
+  else loadLevel(0,true);
+};
 loadLevel(0,true);
 // Prototype builds change frequently, so disable offline caching while we test.
 if("serviceWorker" in navigator){
