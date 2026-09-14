@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.9</title>
+<title>ChainBreak V2.9.0</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -846,7 +846,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.9</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.9.0</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -1009,37 +1009,37 @@ const LEVELS=[
     [null,null,"crate",null,"red",null],
     [null,null,"crate",null,null,null]
    ]},
-  {name:"Park the Blocker",moveLimit:8,title:"Holding makes the opening",
-   tutorial:"",instruction:"The yellow piece is blocking the keyed blue's only opening. Park yellow in Holding, clear the key, then finish the level.",
+  {name:"Park the Blocker",moveLimit:7,title:"Holding makes the opening",
+   tutorial:"",instruction:"The blue key is boxed in. Yellow cannot clear yet, so park it in Holding to open the route. Clear blue, return yellow, then clear yellow.",
    gates:[
      {side:"top",index:2,color:"blue"},
-     {side:"right",index:4,color:"red",keyIds:["blue_keyA"]},
-     {side:"left",index:2,color:"yellow"}
+     {side:"left",index:2,color:"yellow",keyIds:["blue_keyA"]}
    ],
    board:[
     [null,null,null,null,null,null],
     [null,null,"crate",null,null,null],
-    [null,"crate","blue_keyA","yellow","crate",null],
+    [null,"crate","blue_keyA","yellow",null,null],
     [null,null,"crate",null,null,null],
-    [null,null,null,null,"red",null],
+    [null,null,null,null,null,null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Keymaster",moveLimit:18,title:"First challenge",
-   tutorial:"",instruction:"Open the routes in the right order. Free the keys, unlock the red exit, maneuver the chain, and release the locked blue.",
+  {name:"Keymaster",moveLimit:16,title:"First challenge",
+   tutorial:"",instruction:"Break open the blue key, use Holding to free it, unlock red with both keys, then maneuver the linked pair and clear every piece.",
    gates:[
      {side:"top",index:2,color:"blue"},
-     {side:"right",index:4,color:"red",keyIds:["green_keyA","blue_keyA"]},
      {side:"bottom",index:3,color:"green"},
-     {side:"left",index:1,color:"yellow"}
+     {side:"right",index:4,color:"red",keyIds:["blue_keyA","green_keyA"]},
+     {side:"left",index:1,color:"yellow",keyIds:["blue_keyA"]}
    ],
    board:[
     [null,null,null,null,null,null],
-    [null,"yellow","blue_chainA",null,null,null],
-    [null,"crate","blue_chainB","crate",null,null],
-    [null,null,"green_keyA",null,"blue_keyA",null],
-    [null,null,"crate","green","red",null],
-    [null,null,null,"blue_locked2",null,null]
+    [null,null,"crate",null,"green_keyA",null],
+    [null,"crate","blue_keyA","yellow",null,null],
+    [null,null,"crate","blue_chainA",null,null],
+    [null,null,null,"blue_chainB","red",null],
+    [null,null,null,null,null,null]
    ]}
+
 ];
 validatePrototypeLevels();
 let gates=[];
@@ -1089,10 +1089,18 @@ function devCanReachGate(level,pieceValue,gateColor,removeValues=[]){
   return false;
 }
 function validatePrototypeLevels(){
-  const l8=LEVELS[7];
-  const blocked=!devCanReachGate(l8,"blue_keyA","blue");
-  const opens=devCanReachGate(l8,"blue_keyA","blue",["blue_chainA","blue_chainB"]);
-  const result={level8:{keyBlockedBeforeChainMoves:blocked,keyReachableAfterChainClears:opens,pass:blocked&&opens}};
+  const l8=LEVELS[7], l9=LEVELS[8];
+  const l8Blocked=!devCanReachGate(l8,"blue_keyA","blue");
+  const l8Opens=devCanReachGate(l8,"blue_keyA","blue",["blue_chainA","blue_chainB"]);
+  const l9Trapped=!devCanReachGate(l9,"blue_keyA","blue");
+  const l9OpensWhenYellowParked=devCanReachGate(l9,"blue_keyA","blue",["yellow"]);
+  const yellowGate=l9.gates.find(g=>g.color==="yellow");
+  const l9YellowLocked=!!(yellowGate&&yellowGate.keyIds&&yellowGate.keyIds.includes("blue_keyA"));
+  const result={
+    level8:{pass:l8Blocked&&l8Opens},
+    level9:{keyStartsTrapped:l9Trapped,keyReachableWhenYellowParked:l9OpensWhenYellowParked,
+      yellowCannotClearFirst:l9YellowLocked,pass:l9Trapped&&l9OpensWhenYellowParked&&l9YellowLocked}
+  };
   console.table(result);
   return result;
 }
