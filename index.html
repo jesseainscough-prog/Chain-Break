@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.8</title>
+<title>ChainBreak V2.8.9</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -846,7 +846,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.8</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.9</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -995,19 +995,19 @@ const LEVELS=[
     [null,null,null,null,"red",null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Move the Chain",moveLimit:9,title:"Make room for the key",
-   tutorial:"",instruction:"The linked pair is blocking the keyed blue. Move the chain out of the way, clear the key, then use the red gate.",
+  {name:"Break the Barrier",moveLimit:7,title:"Move the chain first",
+   tutorial:"",instruction:"The linked pair seals the only passage to the blue gate. Move or clear the chain to open the route for the keyed blue.",
    gates:[
-     {side:"top",index:2,color:"blue"},
-     {side:"right",index:3,color:"red",keyIds:["blue_keyA"]}
+     {side:"right",index:2,color:"blue"},
+     {side:"bottom",index:4,color:"red",keyIds:["blue_keyA"]}
    ],
    board:[
-    [null,null,null,null,null,null],
-    [null,null,"blue_chainA",null,null,null],
+    [null,null,"crate",null,null,null],
+    [null,null,"crate",null,null,null],
+    [null,"blue_keyA","blue_chainA",null,null,null],
     [null,null,"blue_chainB",null,null,null],
-    [null,null,"blue_keyA","red",null,null],
-    [null,null,null,null,null,null],
-    [null,null,null,null,null,null]
+    [null,null,"crate",null,"red",null],
+    [null,null,"crate",null,null,null]
    ]},
   {name:"Park the Blocker",moveLimit:8,title:"Holding makes the opening",
    tutorial:"",instruction:"The yellow piece is blocking the keyed blue's only opening. Park yellow in Holding, clear the key, then finish the level.",
@@ -1041,6 +1041,7 @@ const LEVELS=[
     [null,null,null,"blue_locked2",null,null]
    ]}
 ];
+validatePrototypeLevels();
 let gates=[];
 let currentLevel=0;
 let board,tray,trayOrigins,moves,moveLimit,history,selected,cleared,ended,dragState,dragGhost,dragOriginEl,tutorialActive=false;
@@ -1059,6 +1060,42 @@ function pushHistory(){history.push(snapshot());document.getElementById("undo").
 function restore(s){board=copyBoard(s.board);tray=s.tray.slice();trayOrigins=(s.trayOrigins||[]).map(x=>x?JSON.parse(JSON.stringify(x)):x);moves=s.moves;moveLimit=s.moveLimit;cleared={...s.cleared};ended=s.ended;selected=null;render()}
 function setStatus(msg,cls=""){const s=document.getElementById("status");s.textContent=msg;s.className="status "+cls}
 function neighbors(r,c){return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([rr,cc])=>rr>=0&&rr<6&&cc>=0&&cc<6)}
+
+// Developer puzzle validator: verifies whether a designated piece can reach a gate
+// in a raw level layout, and can simulate removing specified blockers.
+// Used to prove intended bottlenecks before playtesting.
+function devCanReachGate(level,pieceValue,gateColor,removeValues=[]){
+  const test=level.board.map(row=>row.slice());
+  const remove=new Set(removeValues);
+  let start=null;
+  for(let r=0;r<6;r++)for(let c=0;c<6;c++){
+    if(remove.has(test[r][c]))test[r][c]=null;
+    if(test[r][c]===pieceValue)start=[r,c];
+  }
+  if(!start)return false;
+  const gate=level.gates.find(g=>g.color===gateColor);
+  if(!gate)return false;
+  const target=gate.side==="top"?[0,gate.index]:gate.side==="bottom"?[5,gate.index]:gate.side==="left"?[gate.index,0]:[gate.index,5];
+  const seen=new Set([start.join(",")]),q=[start];
+  while(q.length){
+    const [r,c]=q.shift();
+    if(r===target[0]&&c===target[1])return true;
+    for(const [rr,cc] of [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]){
+      if(rr<0||rr>=6||cc<0||cc>=6)continue;
+      const k=rr+","+cc;if(seen.has(k))continue;
+      if(!test[rr][cc]){seen.add(k);q.push([rr,cc])}
+    }
+  }
+  return false;
+}
+function validatePrototypeLevels(){
+  const l8=LEVELS[7];
+  const blocked=!devCanReachGate(l8,"blue_keyA","blue");
+  const opens=devCanReachGate(l8,"blue_keyA","blue",["blue_chainA","blue_chainB"]);
+  const result={level8:{keyBlockedBeforeChainMoves:blocked,keyReachableAfterChainClears:opens,pass:blocked&&opens}};
+  console.table(result);
+  return result;
+}
 function reachableFrom(sr,sc,ignoreCells=[]){
   const ignore=new Set(ignoreCells.map(([r,c])=>r+","+c));
   const seen=new Set([sr+","+sc]), out=[];
