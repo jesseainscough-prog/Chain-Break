@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.6.4</title>
+<title>ChainBreak V2.6.5</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -598,12 +598,34 @@ body{touch-action:manipulation}
   font-size:18px;
 }
 
+
+.failOverlay{
+  position:fixed;inset:0;z-index:10050;display:none;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(3,12,22,.74);backdrop-filter:blur(8px)
+}
+.failOverlay.show{display:flex}
+.failCard{
+  width:min(90vw,420px);
+  background:linear-gradient(180deg,#3b1f2a,#1f1720);
+  border:1px solid #7a3f52;border-radius:28px;padding:24px;text-align:center;
+  box-shadow:0 24px 60px #0009
+}
+.failTitle{font-size:34px;font-weight:1000}
+.failText{font-size:16px;line-height:1.35;color:#e9d8df;margin-top:10px}
+.retryBig{
+  margin-top:20px;width:100%;padding:14px 18px;border:none;border-radius:16px;
+  font-size:18px;font-weight:1000;background:#ef4444;color:white;
+  touch-action:manipulation;cursor:pointer
+}
+.failSub{font-size:12px;color:#c8aab5;margin-top:10px}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.4</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.5</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
@@ -647,6 +669,16 @@ body{touch-action:manipulation}
       <div class="practiceGate red" id="practiceGate">↑</div>
     </div>
     <div class="tutorialPopHint">Try it: drag the cube into the gate.</div>
+  </div>
+</div>
+
+
+<div class="failOverlay" id="failOverlay">
+  <div class="failCard">
+    <div class="failTitle">Out of Moves</div>
+    <div class="failText">You ran out of moves before clearing the level.</div>
+    <button class="retryBig" id="retryLevel">Retry Level</button>
+    <div class="failSub">Later, coins can be used here for boosts like +5 moves.</div>
   </div>
 </div>
 
@@ -759,6 +791,11 @@ function showCompleteOverlay(){
   document.getElementById("nextOverlay").textContent=currentLevel<LEVELS.length-1?"Next Level":"Play Again";
   document.getElementById("completeOverlay").classList.add("show");
 }
+function showFailOverlay(){
+  clearCoach?.();
+  document.getElementById("tutorialOverlay")?.classList.remove("show");
+  document.getElementById("failOverlay")?.classList.add("show");
+}
 function checkWin(){
   if(!board.flat().some(v=>baseColor(v))&&tray.length===0){
     ended=true;
@@ -769,9 +806,9 @@ function checkWin(){
   }
   if(moves>=moveLimit){
     ended=true;selected=null;tutorialActive=false;
-    document.getElementById("tutorialOverlay")?.classList.remove("show");
-    setStatus("Out of moves! Tap Reset to try the level again.");
+    setStatus("Out of moves!");
     render();
+    showFailOverlay();
   }
 }
 function moveBoardToBoard(sr,sc,tr,tc){
@@ -1188,6 +1225,7 @@ function completeTutorial(){
   document.getElementById("tutorialOverlay")?.classList.remove("show");
 }
 function loadLevel(index,show=true){
+  document.getElementById("failOverlay")?.classList.remove("show");
   clearCoach();
   currentLevel=Math.max(0,Math.min(index,LEVELS.length-1));gates=LEVELS[currentLevel].gates.map(g=>({...g}));board=copyBoard(LEVELS[currentLevel].board);tray=[];trayOrigins=[];moves=0;moveLimit=LEVELS[currentLevel].moveLimit;history=[];selected=null;cleared={};ended=false;dragState=null;tutorialActive=false;clearGhost();document.getElementById("nextLevel").classList.remove("show");setStatus(`Level ${currentLevel+1}: ${LEVELS[currentLevel].name}`);render();if(show)showTutorial();
 }
@@ -1299,6 +1337,12 @@ document.getElementById("reset").onclick=reset;document.getElementById("undo").o
   },{passive:false});
 })();
 
+
+
+document.getElementById("retryLevel").onclick=()=>{
+  document.getElementById("failOverlay").classList.remove("show");
+  loadLevel(currentLevel,false);
+};
 
 document.getElementById("nextOverlay").onclick=()=>{
   document.getElementById("completeOverlay").classList.remove("show");
