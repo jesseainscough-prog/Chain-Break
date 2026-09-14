@@ -1,4 +1,4 @@
-const CACHE="chainbreak-v2-4-1";
+const CACHE="chainbreak-v2-4-2";
 const ASSETS=["./index.html","./manifest.webmanifest"];
 
 self.addEventListener("install",event=>{
