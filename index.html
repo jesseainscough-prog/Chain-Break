@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.6.8</title>
+<title>ChainBreak V2.6.9</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -749,12 +749,52 @@ body{touch-action:manipulation}
   min-height:0!important;
 }
 
+
+/* 2.6.9 gate polish:
+   - gate spans the full matching row/column width
+   - gate is shallower in the direction away from the board
+   - arrows remain inside the gate and point outward
+   - linked-pair icon always paints above both linked tiles
+*/
+.gameCard .arena.unifiedArena .gatesTop .exit,
+.gameCard .arena.unifiedArena .gatesBottom .exit{
+  width:100%!important;
+  height:48%!important;
+  justify-self:stretch!important;
+}
+.gameCard .arena.unifiedArena .gatesLeft .exit,
+.gameCard .arena.unifiedArena .gatesRight .exit{
+  width:48%!important;
+  height:100%!important;
+  align-self:stretch!important;
+}
+
+/* Keep every gate directly against its matching board edge. */
+.gameCard .arena.unifiedArena .gatesTop .exit{align-self:end!important;}
+.gameCard .arena.unifiedArena .gatesBottom .exit{align-self:start!important;}
+.gameCard .arena.unifiedArena .gatesLeft .exit{justify-self:end!important;}
+.gameCard .arena.unifiedArena .gatesRight .exit{justify-self:start!important;}
+
+/* Make the chain symbol visibly sit over the seam between linked blocks. */
+.gameCard .arena.unifiedArena .cell.chainPiece{overflow:visible!important;}
+.gameCard .arena.unifiedArena .cell.chainJoinDown,
+.gameCard .arena.unifiedArena .cell.chainJoinRight{z-index:8!important;}
+.gameCard .arena.unifiedArena .cell.chainJoinUp,
+.gameCard .arena.unifiedArena .cell.chainJoinLeft{z-index:3!important;}
+.gameCard .arena.unifiedArena .chainLink{
+  z-index:20!important;
+  width:27px!important;
+  height:27px!important;
+  font-size:14px!important;
+  box-shadow:0 2px 8px #000b!important;
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.8</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.6.9</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
