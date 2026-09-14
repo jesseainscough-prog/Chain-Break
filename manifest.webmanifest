@@ -1,0 +1,9 @@
+{
+  "name": "ChainBreak Prototype",
+  "short_name": "ChainBreak",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#081c33",
+  "theme_color": "#081c33",
+  "icons": []
+}
