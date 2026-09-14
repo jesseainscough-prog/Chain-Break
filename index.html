@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.1</title>
+<title>ChainBreak V2.8.3</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -827,12 +827,22 @@ body{touch-action:manipulation}
 .lifeTimer{font-size:30px;font-weight:900;margin:3px 0 10px}
 #refillLives{min-height:54px!important;font-size:17px!important;background:linear-gradient(180deg,#ef5350,#d83d3a)!important;color:white!important}
 
+.edgeGate.lockedGate{filter:saturate(.45) brightness(.68);opacity:.88;position:relative}
+.edgeGate.lockedGate::after{content:attr(data-lock);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;line-height:1;background:#07192b;border:1px solid rgba(255,255,255,.75);border-radius:8px;padding:3px 4px;white-space:nowrap;z-index:5}
+.edgeGate.lockedGate{color:rgba(255,255,255,.22)}
+#testLevelModal{position:fixed;inset:0;background:rgba(0,8,18,.82);z-index:12000;display:none;align-items:center;justify-content:center;padding:24px}
+#testLevelModal.show{display:flex}
+.testLevelCard{width:min(340px,92vw);background:#0b2035;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.testLevelCard h3{margin:0 0 5px;text-align:center}.testLevelCard p{margin:0 0 14px;text-align:center;font-size:12px;opacity:.7}
+.testLevelGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.testLevelChoice{border:1px solid rgba(255,255,255,.2);background:#143653;color:#fff;border-radius:10px;padding:11px 4px;font-weight:900;font-size:14px}
+#closeTestLevels{width:100%;margin-top:12px;border:0;border-radius:10px;padding:10px;background:#20384d;color:#fff;font-weight:800}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.1</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.3</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -916,6 +926,11 @@ body{touch-action:manipulation}
   </div>
 </div>
 
+<div id="testLevelModal" aria-hidden="true"><div class="testLevelCard">
+<h3>Developer Level Select</h3><p>Testing only — no life cost or coin reward.</p>
+<div class="testLevelGrid" id="testLevelGrid"></div>
+<button id="closeTestLevels" type="button">Cancel</button>
+</div></div>
 <script>
 const COLORS=["red","blue","green","yellow","purple"];
 
@@ -932,17 +947,17 @@ const LEVELS=[
   {name:"Holding & Obstacles",moveLimit:28,title:"Use every tool",tutorial:"Holding is temporary parking. Tap a held piece and it automatically returns to its original space when that space is open.",instruction:"Now combine the mechanics with gates on different edges.",demo:{color:"blue",side:"bottom"},gates:[{side:"top",index:4,color:"red"},{side:"left",index:4,color:"purple"},{side:"right",index:1,color:"yellow"},{side:"bottom",index:2,color:"green"},{side:"bottom",index:5,color:"blue"}],board:[
     ["green",null,"purple",null,"red",null],[null,"red",null,"yellow",null,"blue"],["crate",null,"blue_chainA",null,"green",null],[null,"yellow","blue_chainB",null,"blue_locked2","purple"],["purple",null,null,"green",null,"red"],[null,"blue","yellow",null,"green",null]
   ]},
-  {name:"Breakthrough",moveLimit:12,title:"Break through",
-   tutorial:"",instruction:"The crate is sitting in the route you need. Break it twice, then use the opening.",
+  {name:"Unlock the Exit",moveLimit:8,title:"Unlock the exit",
+   tutorial:"",instruction:"The red gate is locked. Clear 2 blue pieces to open it, then clear red.",
    gates:[
      {side:"top",index:2,color:"green"},
-     {side:"right",index:2,color:"red"},
+     {side:"right",index:2,color:"red",unlockColor:"blue",unlockCount:2},
      {side:"bottom",index:2,color:"blue"}
    ],
    board:[
     [null,null,null,null,null,null],
     [null,null,"green",null,null,null],
-    [null,"red","crate",null,null,null],
+    [null,"red",null,null,null,"blue"],
     [null,null,"blue",null,null,null],
     [null,null,null,null,null,null],
     [null,null,null,null,null,null]
@@ -1215,7 +1230,9 @@ function render(){
     for(let i=0;i<6;i++){
       const gate=gates.find(g=>g.side===side&&g.index===i);
       if(!gate){const blank=document.createElement("div");blank.className="gateBlank";host.appendChild(blank);continue}
-      const d=document.createElement("button");d.className=`exit edgeGate ${gate.color}`;d.dataset.side=side;d.dataset.index=i;d.textContent=arrows[side];d.setAttribute("aria-label",`${cap(gate.color)} ${side} gate`);d.addEventListener("click",()=>gateTap(side,i));host.appendChild(d);
+      const d=document.createElement("button");d.className=`exit edgeGate ${gate.color}`;d.dataset.side=side;d.dataset.index=i;d.textContent=arrows[side];
+      if(gateIsLocked(gate)){d.classList.add("lockedGate");d.dataset.lock=`🔒 ${gate.unlockColor[0].toUpperCase()} ${gateLockRemaining(gate)}`}
+      d.setAttribute("aria-label",`${cap(gate.color)} ${side} gate`);d.addEventListener("click",()=>gateTap(side,i));host.appendChild(d);
     }
   });
   let reachable=new Set();
@@ -1269,6 +1286,9 @@ function render(){
     s.addEventListener("click",()=>slotTap(i));t.appendChild(s)
   }
 }
+function gateLockRemaining(g){return (!g||!g.unlockColor||!g.unlockCount)?0:Math.max(0,g.unlockCount-(cleared[g.unlockColor]||0))}
+function gateIsLocked(g){return gateLockRemaining(g)>0}
+function lockedGateMessage(g){const n=gateLockRemaining(g);setStatus(`Clear ${n} more ${g.unlockColor} piece${n===1?"":"s"} to unlock the ${g.color} gate.`);blockedFeedback()}
 function gateTarget(side,index){return side==="top"?[0,index]:side==="bottom"?[5,index]:side==="left"?[index,0]:[index,5]}
 function gateAt(side,index){return gates.find(g=>g.side===side&&g.index===index)}
 function canChainReachGate(originR,originC,side,index){
@@ -1280,11 +1300,12 @@ function canChainReachGate(originR,originC,side,index){
   while(q.length){const [r,c]=q.shift();if(r===target[0]&&c===target[1])return true;for(const [nr,nc] of neighbors(r,c)){const k=nr+","+nc;if(!seen.has(k)&&valid(nr,nc)){seen.add(k);q.push([nr,nc])}}}return false
 }
 function clearChainViaGate(originR,originC,side,index){
+  const gate=gateAt(side,index);if(gate&&gateIsLocked(gate)){lockedGateMessage(gate);render();return false}
   if(!canChainReachGate(originR,originC,side,index)){setStatus("The linked pair does not have a clear route to that gate yet.");return false}
   pushHistory();chainCells().forEach(([r,c])=>board[r][c]=null);moves++;cleared.blue=(cleared.blue||0)+2;selected=null;setStatus("Linked blue pair escaped together in one move! 🔗");maybeOpenLock();render();checkWin();return true
 }
 function gateTap(side,index){
-  if(ended||!selected)return;const gate=gateAt(side,index);if(!gate)return;const [tr,tc]=gateTarget(side,index);
+  if(ended||!selected)return;const gate=gateAt(side,index);if(!gate)return;if(gateIsLocked(gate)){lockedGateMessage(gate);render();return}const [tr,tc]=gateTarget(side,index);
   if(selected.type==="tray"){setStatus("Pieces in Holding must return to their original space before they can use a gate.");blockedFeedback();return}
   const {r,c}=selected,v=board[r][c],color=baseColor(v);if(!color||isLocked(v))return;if(color!==gate.color){setStatus(`That piece needs a ${color} gate.`);return}if(isChain(v)){clearChainViaGate(r,c,side,index);return}
   if(board[tr][tc] && !(r===tr&&c===tc)){setStatus("The space beside that gate is blocked.");return}
@@ -1786,6 +1807,27 @@ document.getElementById("refillLives").onclick=()=>{
   document.getElementById("failOverlay").classList.remove("show");
   buildLevel(levelIndex,false);
 };
+
+
+// Prototype-only developer level selector. Remove/disable for production.
+(function setupTestLevelSelector(){
+  const btn=document.getElementById("testLevelBtn"), modal=document.getElementById("testLevelModal");
+  const grid=document.getElementById("testLevelGrid"), close=document.getElementById("closeTestLevels");
+  if(!btn||!modal||!grid)return;
+  LEVELS.forEach((lvl,i)=>{
+    const b=document.createElement("button"); b.type="button"; b.className="testLevelChoice";
+    b.textContent=String(i+1); b.title=lvl.name;
+    b.addEventListener("click",()=>{
+      modal.classList.remove("show"); modal.setAttribute("aria-hidden","true");
+      localStorage.setItem("chainbreakTestLevel",String(i));
+      loadLevel(i,false);
+    });
+    grid.appendChild(b);
+  });
+  btn.addEventListener("click",()=>{modal.classList.add("show");modal.setAttribute("aria-hidden","false")});
+  close.addEventListener("click",()=>{modal.classList.remove("show");modal.setAttribute("aria-hidden","true")});
+  modal.addEventListener("click",e=>{if(e.target===modal)close.click()});
+})();
 
 </script>
 </body>
