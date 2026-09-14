@@ -8,14 +8,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.8.3</title>
+<title>ChainBreak V2.8.4</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;overflow:hidden}body{min-height:100vh;min-height:100svh;background:linear-gradient(#061728,#0a2945);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;overscroll-behavior:none}
 .app{max-width:660px;height:100svh;margin:auto;padding:calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px);display:flex;flex-direction:column;overflow:hidden}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.brand{font-size:28px;font-weight:900;letter-spacing:-1px}.tag{font-size:11px;letter-spacing:1.8px;color:var(--muted);margin-top:2px}.moves{text-align:right}.moves b{display:block;font-size:27px}.levelLabel{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:2px}
+.brand{font-size:28px;font-weight:900;letter-spacing:-1px}.tag{font-size:11px;letter-spacing:1.8px;color:var(--muted);margin-top:2px}.moves{text-align:right}.moves b{display:block;font-size:27px}.levelLabel{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:2px;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
 .card{margin-top:8px;background:rgba(16,42,68,.97);border:1px solid var(--line);border-radius:20px;padding:9px;box-shadow:0 16px 36px rgba(0,0,0,.18)}
 .board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;aspect-ratio:1/1;min-height:0}
 .arena{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;grid-template-rows:32px minmax(0,1fr) 32px;gap:4px;align-items:stretch}.gatesTop,.gatesBottom{grid-column:2;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.gatesTop{grid-row:1}.gatesBottom{grid-row:3}.gatesLeft,.gatesRight{display:grid;grid-template-rows:repeat(6,1fr);gap:4px}.gatesLeft{grid-column:1;grid-row:2}.gatesRight{grid-column:3;grid-row:2}.board{grid-column:2;grid-row:2}.gateBlank{aspect-ratio:1}.edgeGate{width:100%;height:100%;min-width:0;min-height:0}
@@ -842,7 +842,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.3</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.8.4</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -1811,9 +1811,13 @@ document.getElementById("refillLives").onclick=()=>{
 
 // Prototype-only developer level selector. Remove/disable for production.
 (function setupTestLevelSelector(){
-  const btn=document.getElementById("testLevelBtn"), modal=document.getElementById("testLevelModal");
+  const modal=document.getElementById("testLevelModal");
   const grid=document.getElementById("testLevelGrid"), close=document.getElementById("closeTestLevels");
-  if(!btn||!modal||!grid)return;
+  const label=document.querySelector(".levelLabel");
+  if(!label||!modal||!grid)return;
+  label.setAttribute("title","Developer level select");
+  label.setAttribute("role","button");
+  label.setAttribute("tabindex","0");
   LEVELS.forEach((lvl,i)=>{
     const b=document.createElement("button"); b.type="button"; b.className="testLevelChoice";
     b.textContent=String(i+1); b.title=lvl.name;
@@ -1824,7 +1828,9 @@ document.getElementById("refillLives").onclick=()=>{
     });
     grid.appendChild(b);
   });
-  btn.addEventListener("click",()=>{modal.classList.add("show");modal.setAttribute("aria-hidden","false")});
+  const open=()=>{modal.classList.add("show");modal.setAttribute("aria-hidden","false")};
+  label.addEventListener("click",open);
+  label.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
   close.addEventListener("click",()=>{modal.classList.remove("show");modal.setAttribute("aria-hidden","true")});
   modal.addEventListener("click",e=>{if(e.target===modal)close.click()});
 })();
