@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.5.7</title>
+<title>ChainBreak V2.5.8</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -242,7 +242,7 @@ body{touch-action:manipulation}
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.2),0 8px 18px #0007;
 }
 .practicePiece{left:30px;top:41px;touch-action:none;z-index:3}
-.practiceGate{right:30px;top:41px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:1000}
+.practiceGate{right:24px;top:35px;width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:1000}
 .practiceArrow{
   position:absolute;
   left:50%;
@@ -262,7 +262,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.7</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.8</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
@@ -783,47 +783,96 @@ function hint(){
 }
 document.getElementById("reset").onclick=reset;document.getElementById("undo").onclick=undo;document.getElementById("hint").onclick=hint;document.getElementById("nextLevel").onclick=()=>loadLevel(currentLevel+1,true);
 
+
 (function bindTutorialPractice(){
   const piece=document.getElementById("practicePiece");
   const gate=document.getElementById("practiceGate");
   const area=document.getElementById("tutorialPractice");
-  let dragging=false,offX=0,offY=0;
-  const gateHit=(x,y)=>{
-    const r=gate.getBoundingClientRect();
-    return x>=r.left-18&&x<=r.right+18&&y>=r.top-18&&y<=r.bottom+18;
+  let dragging=false,offX=0,offY=0,lastX=0,lastY=0,done=false;
+
+  const overlapsGate=()=>{
+    const p=piece.getBoundingClientRect(),g=gate.getBoundingClientRect();
+    const inset=8;
+    return !(p.right-inset<g.left || p.left+inset>g.right || p.bottom-inset<g.top || p.top+inset>g.bottom);
   };
+
+  const resetPiece=()=>{
+    piece.style.left="30px";
+    piece.style.top="41px";
+    gate.classList.remove("ready");
+  };
+
+  const finishSuccess=()=>{
+    if(done)return;
+    done=true;dragging=false;
+    piece.classList.remove("dragging");
+    gate.classList.remove("ready");
+    gate.classList.add("success");
+    if(navigator.vibrate)try{navigator.vibrate(20)}catch(e){}
+    setTimeout(()=>{
+      gate.classList.remove("success");
+      completeTutorial();
+      done=false;
+      resetPiece();
+    },180);
+  };
+
   const start=(x,y)=>{
+    if(done)return;
     const r=piece.getBoundingClientRect();
-    dragging=true;offX=x-r.left;offY=y-r.top;piece.classList.add("dragging");
+    dragging=true;lastX=x;lastY=y;
+    offX=x-r.left;offY=y-r.top;
+    piece.classList.add("dragging");
   };
+
   const move=(x,y)=>{
-    if(!dragging)return;
+    if(!dragging||done)return;
+    lastX=x;lastY=y;
     const ar=area.getBoundingClientRect();
     const left=Math.max(0,Math.min(ar.width-piece.offsetWidth,x-ar.left-offX));
     const top=Math.max(0,Math.min(ar.height-piece.offsetHeight,y-ar.top-offY));
-    piece.style.left=left+"px";piece.style.top=top+"px";
-    gate.classList.toggle("ready",gateHit(x,y));
+    piece.style.left=left+"px";
+    piece.style.top=top+"px";
+    const hit=overlapsGate();
+    gate.classList.toggle("ready",hit);
+    if(hit) finishSuccess();
   };
-  const end=(x,y)=>{
+
+  const end=()=>{
+    if(done)return;
     if(!dragging)return;
-    dragging=false;piece.classList.remove("dragging");
-    if(gateHit(x,y)){
-      gate.classList.remove("ready");
-      gate.classList.add("success");
-      if(navigator.vibrate)try{navigator.vibrate(20)}catch(e){}
-      setTimeout(()=>{gate.classList.remove("success");completeTutorial();},220);
-    }else{
-      piece.style.left="30px";piece.style.top="41px";gate.classList.remove("ready");
-    }
+    dragging=false;
+    piece.classList.remove("dragging");
+    if(overlapsGate()) finishSuccess();
+    else resetPiece();
   };
-  piece.addEventListener("pointerdown",e=>{e.preventDefault();piece.setPointerCapture?.(e.pointerId);start(e.clientX,e.clientY)});
-  piece.addEventListener("pointermove",e=>{if(dragging){e.preventDefault();move(e.clientX,e.clientY)}});
-  piece.addEventListener("pointerup",e=>{e.preventDefault();end(e.clientX,e.clientY)});
-  piece.addEventListener("pointercancel",()=>{dragging=false;piece.style.left="30px";piece.style.top="41px";gate.classList.remove("ready")});
-  piece.addEventListener("touchstart",e=>{const t=e.touches[0];if(t){e.preventDefault();start(t.clientX,t.clientY)}},{passive:false});
-  piece.addEventListener("touchmove",e=>{const t=e.touches[0];if(t&&dragging){e.preventDefault();move(t.clientX,t.clientY)}},{passive:false});
-  piece.addEventListener("touchend",e=>{const t=e.changedTouches[0];if(t){e.preventDefault();end(t.clientX,t.clientY)}},{passive:false});
+
+  piece.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    try{piece.setPointerCapture(e.pointerId)}catch(_){}
+    start(e.clientX,e.clientY);
+  });
+  piece.addEventListener("pointermove",e=>{
+    if(dragging){e.preventDefault();move(e.clientX,e.clientY)}
+  });
+  piece.addEventListener("pointerup",e=>{
+    e.preventDefault();end();
+  });
+  piece.addEventListener("pointercancel",()=>{if(!done){dragging=false;piece.classList.remove("dragging");resetPiece()}});
+
+  piece.addEventListener("touchstart",e=>{
+    const t=e.touches[0];
+    if(t){e.preventDefault();start(t.clientX,t.clientY)}
+  },{passive:false});
+  piece.addEventListener("touchmove",e=>{
+    const t=e.touches[0];
+    if(t&&dragging){e.preventDefault();move(t.clientX,t.clientY)}
+  },{passive:false});
+  piece.addEventListener("touchend",e=>{
+    e.preventDefault();end();
+  },{passive:false});
 })();
+
 
 document.getElementById("nextOverlay").onclick=()=>{
   document.getElementById("completeOverlay").classList.remove("show");
