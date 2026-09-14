@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.5.8</title>
+<title>ChainBreak V2.5.9</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -262,7 +262,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.8</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.5.9</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div></div>
   </div>
 
@@ -423,7 +423,7 @@ function checkWin(){
   }
   if(moves>=moveLimit){
     ended=true;selected=null;tutorialActive=false;
-    document.getElementById("tutorial").classList.add("hidden");
+    document.getElementById("tutorialOverlay")?.classList.remove("show");
     setStatus("Out of moves! Tap Reset to try the level again.");
     render();
   }
@@ -759,15 +759,12 @@ function completeTutorial(){
   tutorialActive=false;
   document.getElementById("tutorialOverlay")?.classList.remove("show");
 }
-function completeTutorial(){
-  if(!tutorialActive)return;tutorialActive=false;document.getElementById("tutorial").classList.add("hidden");setStatus("Nice — you got it! Keep going. ✅");
-}
 function loadLevel(index,show=true){
   currentLevel=Math.max(0,Math.min(index,LEVELS.length-1));gates=LEVELS[currentLevel].gates.map(g=>({...g}));board=copyBoard(LEVELS[currentLevel].board);tray=[];trayOrigins=[];moves=0;moveLimit=LEVELS[currentLevel].moveLimit;history=[];selected=null;cleared={};ended=false;dragState=null;tutorialActive=false;clearGhost();document.getElementById("nextLevel").classList.remove("show");setStatus(`Level ${currentLevel+1}: ${LEVELS[currentLevel].name}`);render();if(show)showTutorial();
 }
 function reset(){
   // Reset should always rebuild the board and restart the lesson for this level.
-  document.getElementById("tutorial").classList.add("hidden");
+  document.getElementById("tutorialOverlay")?.classList.remove("show");
   loadLevel(currentLevel,true);
 }
 function undo(){if(!history.length)return;const s=history.pop();restore(s);setStatus("Last move undone.")}
