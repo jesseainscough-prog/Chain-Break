@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChainBreak">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ChainBreak V2.9.1</title>
+<title>ChainBreak V2.9.3</title>
 <style>
 :root{--bg:#07192b;--panel:#102a44;--panel2:#0b2238;--line:#294965;--text:#f8fbff;--muted:#9fb3c7;--red:#ef4444;--blue:#3b82f6;--green:#22c55e;--yellow:#f4bf32;--purple:#8b5cf6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -846,7 +846,7 @@ body{touch-action:manipulation}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.9.1</span></div></div>
+    <div><div class="brand">🔗 ChainBreak</div><div class="tag">PLAYABLE PROTOTYPE <span class="version">VERSION 2.9.3</span></div></div>
     <div class="moves"><div class="levelLabel">Level <span id="levelNum">1</span></div>Moves Left<b id="moves">0</b><div class="coinHud"><span class="coinDot"></span><span id="coinCount">0</span></div><div class="lifeHud">❤️ <span id="lifeCount">5</span></div></div>
   </div>
 
@@ -1024,23 +1024,23 @@ const LEVELS=[
     [null,null,null,null,"blue",null],
     [null,null,null,null,null,null]
    ]},
-  {name:"Keymaster",moveLimit:16,title:"First challenge",
-   tutorial:"",instruction:"Break open the blue key, use Holding to free it, unlock red with both keys, then maneuver the linked pair and clear every piece.",
+  {name:"Keymaster",moveLimit:14,title:"First challenge",
+   tutorial:"",instruction:"Use Holding to free the first key. Break the crate blocking green, release the locked blue, clear the linked pair, and open the final exits.",
    gates:[
-     {side:"top",index:2,color:"blue"},
-     {side:"bottom",index:3,color:"green"},
-     {side:"right",index:4,color:"red",keyIds:["blue_keyA","green_keyA"]},
-     {side:"left",index:1,color:"yellow",keyIds:["blue_keyA"]}
+     {side:"left",index:0,color:"blue"},
+     {side:"bottom",index:4,color:"blue"},
+     {side:"right",index:5,color:"yellow",keyIds:["blue_keyA"]},
+     {side:"bottom",index:5,color:"green"},
+     {side:"right",index:4,color:"red",keyIds:["blue_keyA","green_keyA"]}
    ],
    board:[
-    [null,null,null,null,null,null],
-    [null,null,"crate",null,"green_keyA",null],
-    [null,"crate","blue_keyA","yellow",null,null],
-    [null,null,"crate","blue_chainA",null,null],
-    [null,null,null,"blue_chainB","red",null],
-    [null,null,null,null,null,null]
+    ["yellow","blue_keyA","blue_locked2",null,null,null],
+    ["blue_locked2","blue_locked2",null,null,null,null],
+    [null,null,null,"blue_chainA",null,null],
+    [null,null,null,"blue_chainB",null,null],
+    [null,null,null,null,"blue","green_keyA"],
+    [null,null,null,null,"red","crate"]
    ]}
-
 ];
 validatePrototypeLevels();
 let gates=[];
@@ -1118,6 +1118,7 @@ function solveLevelState(level,{allowHolding=true,maxDepth=30}={}){
   const q=[start],seen=new Set([norm(start)]);
   let qi=0,expanded=0;
   while(qi<q.length){
+    if(expanded>250000)return {solvable:false,moves:null,path:[],expanded,aborted:true};
     const s=q[qi++];expanded++;
     if(won(s))return {solvable:true,moves:s.path.length,path:s.path,expanded};
     if(s.path.length>=maxDepth)continue;
@@ -1163,22 +1164,116 @@ function solveLevelState(level,{allowHolding=true,maxDepth=30}={}){
   }
   return {solvable:false,moves:null,path:[],expanded};
 }
+function solveLevelFull(level,{allowHolding=true,maxDepth=24}={}){
+  const start={b:level.board.flat(),t:[],o:[],cb:0,path:[]};
+  const color=v=>!v?null:COLORS.find(c=>v.startsWith(c))||null;
+  const idx=(r,c)=>r*6+c,rc=i=>[Math.floor(i/6),i%6];
+  const neigh=i=>{const [r,c]=rc(i),a=[];if(r)a.push(i-6);if(r<5)a.push(i+6);if(c)a.push(i-1);if(c<5)a.push(i+1);return a};
+  const target=g=>g.side==="top"?g.index:g.side==="bottom"?30+g.index:g.side==="left"?g.index*6:g.index*6+5;
+  const keyPresent=(s,k)=>s.b.includes(k)||s.t.includes(k);
+  const gateLocked=(s,g)=>(g.keyIds||[]).some(k=>keyPresent(s,k));
+  const norm=s=>s.b.join("|")+"#"+s.t.map((v,i)=>v+"@"+JSON.stringify(s.o[i])).join("|")+"#"+s.cb;
+  const clone=s=>({b:s.b.slice(),t:s.t.slice(),o:s.o.map(x=>Array.isArray(x)?x.slice():x),cb:s.cb,path:s.path.slice()});
+  const normalize=s=>{if(s.cb>=2)s.b=s.b.map(v=>v==="blue_locked2"?"blue":v);return s};
+  const won=s=>!s.b.some(v=>color(v))&&s.t.length===0;
+  const reach=(s,from,ignore=new Set())=>{
+    const seen=new Set([from]),q=[from],out=[];
+    while(q.length){const p=q.shift();for(const n of neigh(p))if(!seen.has(n)&&(!s.b[n]||ignore.has(n))){seen.add(n);q.push(n);out.push(n)}}
+    return out;
+  };
+  const q=[start],seen=new Set([norm(start)]);let qi=0,expanded=0;
+  while(qi<q.length){
+    if(expanded>250000)return {solvable:false,moves:null,path:[],expanded,aborted:true};
+    const s=q[qi++];expanded++;
+    if(won(s))return {solvable:true,moves:s.path.length,path:s.path,expanded};
+    if(s.path.length>=maxDepth)continue;
+    const push=n=>{normalize(n);const k=norm(n);if(!seen.has(k)){seen.add(k);q.push(n)}};
+
+    // Crates.
+    for(let i=0;i<36;i++)if(s.b[i]==="crate"||s.b[i]==="crate1"){
+      const n=clone(s);n.b[i]=s.b[i]==="crate"?"crate1":null;n.path.push(s.b[i]==="crate"?"Hit crate":"Break crate");push(n);
+    }
+
+    // Linked pair: translate together through adjacent state positions, clear
+    // together through a matching gate, or park/return together.
+    const ca=s.b.indexOf("blue_chainA"),cb=s.b.indexOf("blue_chainB");
+    if(ca>=0&&cb>=0){
+      const [ar,ac]=rc(ca),[br,bc]=rc(cb),dr=br-ar,dc=bc-ac;
+      const own=new Set([ca,cb]);
+      const stateKey=(r,c)=>r+","+c;
+      const fits=(r,c)=>{
+        const r2=r+dr,c2=c+dc;if(r<0||r>=6||c<0||c>=6||r2<0||r2>=6||c2<0||c2>=6)return false;
+        const a=idx(r,c),b=idx(r2,c2);return (!s.b[a]||own.has(a))&&(!s.b[b]||own.has(b));
+      };
+      const sq=[[ar,ac]],ss=new Set([stateKey(ar,ac)]),states=[];
+      while(sq.length){const [r,c]=sq.shift();for(const [rr,cc] of [[r-1,c],[r+1,c],[r,c-1],[r,c+1]])if(fits(rr,cc)&&!ss.has(stateKey(rr,cc))){ss.add(stateKey(rr,cc));sq.push([rr,cc]);states.push([rr,cc])}}
+      const gateTargets=new Set(level.gates.filter(g=>g.color==="blue"&&!gateLocked(s,g)).map(target));
+      const strategic=states.filter(([r,c])=>{
+        const a=idx(r,c),b=idx(r+dr,c+dc);
+        return gateTargets.has(a)||gateTargets.has(b)||neigh(a).some(n=>s.b[n]&&!own.has(n))||neigh(b).some(n=>s.b[n]&&!own.has(n));
+      });
+      // Equivalent linked-pair translations are omitted from the canonical
+      // search when the pair can already reach a matching gate. If it cannot,
+      // retain strategic translations that change its local blocking relation.
+      const pairCanClear=level.gates.filter(g=>g.color==="blue"&&!gateLocked(s,g)).some(g=>{
+        const gt=target(g);return states.some(([r,c])=>idx(r,c)===gt||idx(r+dr,c+dc)===gt)||ca===gt||cb===gt;
+      });
+      if(!pairCanClear)for(const [r,c] of strategic){
+        const a=idx(r,c),b=idx(r+dr,c+dc),n=clone(s);n.b[ca]=n.b[cb]=null;n.b[a]="blue_chainA";n.b[b]="blue_chainB";n.path.push("Move linked blue pair");push(n);
+      }
+      for(const g of level.gates.filter(g=>g.color==="blue"&&!gateLocked(s,g))){
+        const gt=target(g);
+        if(states.some(([r,c])=>idx(r,c)===gt||idx(r+dr,c+dc)===gt)||ca===gt||cb===gt){
+          const n=clone(s);n.b[ca]=n.b[cb]=null;n.cb+=2;n.path.push(`Clear linked blue pair via ${g.side} gate`);push(n);
+        }
+      }
+      if(allowHolding&&s.t.length<=2&&states.length===0){
+        const n=clone(s);n.b[ca]=n.b[cb]=null;n.t.push("blue_chainA","blue_chainB");n.o.push([ca,cb],[ca,cb]);n.path.push("Hold linked blue pair");push(n);
+      }
+    }
+
+    // Singles.
+    for(let i=0;i<36;i++){
+      const v=s.b[i],c=color(v);if(!c||v==="blue_locked2"||v.includes("_chain"))continue;
+      const rr=reach(s,i);
+      // Solver canonicalization: a freely routable single is represented at its
+      // current cell. Relocating it within the same empty component cannot make
+      // a direct gate clear cheaper, so equivalent intermediate landings are omitted.
+      for(const g of level.gates.filter(g=>g.color===c&&!gateLocked(s,g))){
+        const gt=target(g);if((!s.b[gt]||gt===i)&&(gt===i||rr.includes(gt))){
+          const n=clone(s);n.b[i]=null;if(c==="blue")n.cb++;n.path.push(`Clear ${v} via ${g.side} gate`);push(n)
+        }
+      }
+      if(allowHolding&&s.t.length<4&&rr.length===0){const n=clone(s);n.b[i]=null;n.t.push(v);n.o.push(i);n.path.push(`Hold ${v}`);push(n)}
+    }
+
+    // Return held singles and pair.
+    if(allowHolding){
+      for(let ti=0;ti<s.t.length;ti++){
+        const v=s.t[ti],o=s.o[ti];
+        if(Array.isArray(o)){
+          if(v!=="blue_chainA"||ti+1>=s.t.length||s.t[ti+1]!=="blue_chainB")continue;
+          const [a,b]=o;if(s.b[a]||s.b[b])continue;
+          const n=clone(s);n.b[a]="blue_chainA";n.b[b]="blue_chainB";n.t.splice(ti,2);n.o.splice(ti,2);n.path.push("Return linked blue pair");push(n);
+        }else if(!s.b[o]){
+          const n=clone(s);n.b[o]=v;n.t.splice(ti,1);n.o.splice(ti,1);n.path.push(`Return ${v}`);push(n);
+        }
+      }
+    }
+  }
+  return {solvable:false,moves:null,path:[],expanded};
+}
 function validatePrototypeLevels(){
-  const l8=LEVELS[7],l9=LEVELS[8];
+  const l8=LEVELS[7],l9=LEVELS[8],l10=LEVELS[9];
   const l8Blocked=!devCanReachGate(l8,"blue_keyA","blue");
   const l8Opens=devCanReachGate(l8,"blue_keyA","blue",["blue_chainA","blue_chainB"]);
-  const withHolding=solveLevelState(l9,{allowHolding:true,maxDepth:14});
-  const withoutHolding=solveLevelState(l9,{allowHolding:false,maxDepth:14});
+  const l9Yes=solveLevelState(l9,{allowHolding:true,maxDepth:14});
+  const l9No=solveLevelState(l9,{allowHolding:false,maxDepth:14});
+  const l10Result=solveLevelFull(l10,{allowHolding:true,maxDepth:18});
   const result={
     level8:{pass:l8Blocked&&l8Opens},
-    level9:{
-      solvableWithHolding:withHolding.solvable,
-      minimumMoves:withHolding.moves,
-      solvableWithoutHolding:withoutHolding.solvable,
-      holdingMathematicallyRequired:withHolding.solvable&&!withoutHolding.solvable,
-      solution:withHolding.path,
-      pass:withHolding.solvable&&!withoutHolding.solvable
-    }
+    level9:{minimumMoves:l9Yes.moves,holdingRequired:l9Yes.solvable&&!l9No.solvable,pass:l9Yes.solvable&&!l9No.solvable},
+    level10:{solvable:l10Result.solvable,minimumMoves:l10Result.moves,solution:l10Result.path,pass:l10Result.solvable}
   };
   console.log("ChainBreak developer validation",result);
   return result;
